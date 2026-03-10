@@ -1,0 +1,3 @@
+"""
+Kickstarter scraper module
+""";

@@ -1,0 +1,108 @@
+
+PROJECT_SPEC_v3
+Kickstarter Viability Analyzer
+
+OBJECTIVE
+
+Build a system that analyzes Kickstarter project funding viability.
+
+The system combines:
+
+- historical Kickstarter dataset (Kaggle)
+- manually triggered scraping of live projects
+- analytics engine
+- machine learning models
+- demo web interface
+
+The system should estimate:
+
+- probability of reaching funding goal
+- estimated time to reach funding goal
+- comparable project statistics
+- funding velocity patterns
+
+PRIMARY USE CASE
+
+User inputs:
+
+category
+goal
+country
+project duration
+
+System outputs:
+
+probability of funding success
+median funding of similar projects
+average pledge size
+backer distribution
+estimated time to reach funding goal
+
+SYSTEM COMPONENTS
+
+1 Historical Dataset Loader
+2 Kickstarter Scraper (manual execution)
+3 Dataset Builder
+4 Analytics Engine
+5 Machine Learning Module
+6 Web Demo Interface
+
+SCRAPER MODE
+
+Manual execution only.
+
+Example:
+
+python src/scraper/run_scraper.py
+
+No automatic scheduling.
+
+DATA SOURCES
+
+Historical dataset:
+
+https://www.kaggle.com/datasets/ulrikthygepedersen/kickstarter-projects
+
+Live data:
+
+Kickstarter public pages.
+
+DATA STORAGE
+
+PostgreSQL database.
+
+Expected tables:
+
+projects
+project_snapshots
+categories
+analytics_cache
+
+DATA SCIENCE GOALS
+
+Enable analytics for:
+
+similar project search
+funding velocity estimation
+goal completion probability
+time-to-goal estimation
+
+WEB DEMO
+
+A simple web interface allowing users to test project viability.
+
+Recommended stack:
+
+Python backend
+Streamlit or FastAPI frontend
+
+AI AGENT EXPECTATIONS
+
+AI coding agents should:
+
+inspect datasets
+infer schemas
+normalize field names
+handle missing values
+detect duplicates
+generate derived features

@@ -1,0 +1,36 @@
+<class 'pandas.DataFrame'>
+RangeIndex: 374853 entries, 0 to 374852
+Data columns (total 11 columns):
+ #   Column       Non-Null Count   Dtype
+---  ------       --------------   -----
+ 0   ID           374853 non-null  int64
+ 1   Name         374853 non-null  str  
+ 2   Category     374853 non-null  str  
+ 3   Subcategory  374853 non-null  str  
+ 4   Country      374853 non-null  str  
+ 5   Launched     374853 non-null  str  
+ 6   Deadline     374853 non-null  str  
+ 7   Goal         374853 non-null  int64
+ 8   Pledged      374853 non-null  int64
+ 9   Backers      374853 non-null  int64
+ 10  State        374853 non-null  str  
+dtypes: int64(4), str(7)
+memory usage: 31.5 MB
+
+
+           ID                                                         Name      Category Subcategory        Country             Launched    Deadline   Goal  Pledged  Backers   State
+0  1860890148  Grace Jones Does Not Give A F$#% T-Shirt (limited Edition)        Fashion     Fashion  United States  2009-04-21 21:02:48  2009-05-31   1000      625       30  Failed
+1   709707365                               CRYSTAL ANTLERS UNTITLED MOVIE  Film & Video      Shorts  United States  2009-04-23 00:07:53  2009-07-20  80000       22        3  Failed
+
+Missing values:
+ID             0
+Name           0
+Category       0
+Subcategory    0
+Country        0
+Launched       0
+Deadline       0
+Goal           0
+Pledged        0
+Backers        0
+State          0
