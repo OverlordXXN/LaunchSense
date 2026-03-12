@@ -1,0 +1,25 @@
+﻿
+--- Model Evaluation Metrics ---
+Accuracy: 0.7617
+ROC AUC Score: 0.8501
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.81      0.82      0.82     48201
+           1       0.67      0.66      0.66     26770
+
+    accuracy                           0.76     74971
+   macro avg       0.74      0.74      0.74     74971
+weighted avg       0.76      0.76      0.76     74971
+
+
+--- Feature Importances ---
+1. average_pledge_per_backer: 0.6009
+2. goal: 0.1432
+3. goal_realism_score: 0.1254
+4. subcategory_success_rate: 0.0955
+5. category_success_rate: 0.0222
+6. competition_density: 0.0127
+
+Model successfully saved to: models/kickstarter_random_forest_model.pkl

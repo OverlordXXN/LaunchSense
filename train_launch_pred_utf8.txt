@@ -1,0 +1,24 @@
+﻿
+--- Model Evaluation Metrics ---
+Accuracy: 0.6892
+ROC AUC Score: 0.7218
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.72      0.86      0.78     48201
+           1       0.60      0.38      0.47     26770
+
+    accuracy                           0.69     74971
+   macro avg       0.66      0.62      0.62     74971
+weighted avg       0.67      0.69      0.67     74971
+
+
+--- Feature Importances ---
+1. subcategory_success_rate: 0.4658
+2. goal: 0.2000
+3. category_success_rate: 0.1562
+4. goal_realism_score: 0.1313
+5. competition_density: 0.0467
+
+Model successfully saved to: models/kickstarter_launch_predictor.pkl

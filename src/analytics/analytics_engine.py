@@ -95,8 +95,14 @@ def build_analytics_features() -> pd.DataFrame:
     df['deadline'] = pd.to_datetime(df['deadline'])
     df['duration_days'] = (df['deadline'] - df['launched_at']).dt.days
 
+    # Extract temporal features
+    df['launch_month'] = df['launched_at'].dt.month
+    df['launch_day_of_week'] = df['launched_at'].dt.dayofweek
+    df['campaign_duration'] = df['duration_days']
+
+
     # Base target metric: is_successful (1/0)
-    df['is_successful'] = (df['state'] == 'successful').astype(int)
+    df['is_successful'] = (df['state'].str.lower() == 'successful').astype(int)
     
     # 1. category_success_rate
     # 2. subcategory_success_rate

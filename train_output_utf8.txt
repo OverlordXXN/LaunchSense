@@ -1,0 +1,17 @@
+﻿
+--- Model Evaluation Metrics ---
+Accuracy: 0.7201
+ROC AUC Score: 0.7854
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.74      0.87      0.80     48201
+           1       0.66      0.45      0.53     26770
+
+    accuracy                           0.72     74971
+   macro avg       0.70      0.66      0.67     74971
+weighted avg       0.71      0.72      0.70     74971
+
+
+Model successfully saved to: models/kickstarter_success_model.pkl
