@@ -495,3 +495,23 @@ To expose goal optimization as a standalone, dedicated service endpoint (`/optim
 }
 ```
 
+---
+
+## Phase 6 — Web Demo (Streamlit)
+
+**Objective:**
+To build a lightweight interactive web demo using Streamlit that consumes the existing FastAPI endpoints, allowing users to input project parameters and receive predictions.
+
+**Implementation Details (`demo/streamlit_app.py`):**
+1. **UI Architecture**: Structured into four logical sections for Project Inputs, Prediction Results, Goal Optimization, and Feature Explanation.
+2. **API Integration**: Uses the `requests` library to interface with the local `http://localhost:8000` REST API. Safely catches connection errors if the server is offline.
+3. **User Interaction Flow**: Provides interactive widgets (dropdowns, sliders, number inputs) to map out campaign goals and categorical parameters. Upon form submission, it queries both `/predict` and `/optimize` endpoints.
+4. **Visualization**: Extracts the SHAP log-odds feature contributions from the prediction response and dynamically sorts them into a Streamlit bar chart, mapped for positive and negative impacts.
+
+**Local Execution Instructions:**
+1) Start the API server:
+   `uvicorn src.api.app:app --reload`
+
+2) Start the Streamlit demo:
+   `streamlit run demo/streamlit_app.py`
+

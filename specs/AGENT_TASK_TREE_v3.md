@@ -2,7 +2,7 @@
 Kickstarter Viability Analyzer
 
 Total tasks: 41
-Completed tasks: 36
+Completed tasks: 39
 
 ------------------------------------------------
 PHASE 1 — PROJECT SETUP [COMPLETED]
@@ -71,6 +71,6 @@ PHASE 5 — API LAYER
 PHASE 6 — WEB DEMO
 ------------------------------------------------
 
-[ ] TASK-039 build frontend demo interface (HTML/JS/CSS or Streamlit)
-[ ] TASK-040 create form for user project parameters (goal, category, duration, etc.)
-[ ] TASK-041 display three types of insights: 1. Predicted probability of success (from the ML model), 2. Funding goal optimization, 3. Feature contribution breakdown
+[X] TASK-039 build frontend demo interface (HTML/JS/CSS or Streamlit)
+[X] TASK-040 create form for user project parameters (goal, category, duration, etc.)
+[X] TASK-041 display three types of insights: 1. Predicted probability of success (from the ML model), 2. Funding goal optimization, 3. Feature contribution breakdown
