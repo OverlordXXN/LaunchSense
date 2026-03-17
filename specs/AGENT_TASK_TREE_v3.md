@@ -1,8 +1,8 @@
 # AGENT_TASK_TREE_v3
 Kickstarter Viability Analyzer
 
-Total tasks: 41
-Completed tasks: 39
+Total tasks: 47
+Completed tasks: 43
 
 ------------------------------------------------
 PHASE 1 — PROJECT SETUP [COMPLETED]
@@ -50,17 +50,17 @@ PHASE 3 — MODEL TRAINING PIPELINE [COMPLETED]
 [X] TASK-030 document training phases in WALKTHROUGH.md
 
 ------------------------------------------------
-PHASE 4 — PREDICTION / INFERENCE PIPELINE
+PHASE 4 — PREDICTION / INFERENCE PIPELINE [COMPLETED]
 ------------------------------------------------
 
-[X] TASK-031 build pre-launch prediction interface (Note: Temporal feature engineering implemented in src/analytics/analytics_engine.py and the pre-launch prediction model trained in src/models/train_launch_predictor.py)
+[X] TASK-031 build pre-launch prediction interface
 [X] TASK-032 implement prediction engine utilizing the saved XGBoost model
 [X] TASK-033 map raw project inputs to model feature space
-[X] TASK-034 implement Goal Optimization Logic (suggesting optimal funding goals)
+[X] TASK-034 implement Goal Optimization Logic
 [X] TASK-035 output probability of success and feature contribution breakdown
 
 ------------------------------------------------
-PHASE 5 — API LAYER
+PHASE 5 — API LAYER [COMPLETED]
 ------------------------------------------------
 
 [X] TASK-036 setup FastAPI / Flask application
@@ -68,9 +68,25 @@ PHASE 5 — API LAYER
 [X] TASK-038 implement `/optimize` goal recommendation endpoint
 
 ------------------------------------------------
-PHASE 6 — WEB DEMO
+PHASE 6 — WEB DEMO [COMPLETED]
 ------------------------------------------------
 
 [X] TASK-039 build frontend demo interface (HTML/JS/CSS or Streamlit)
 [X] TASK-040 create form for user project parameters (goal, category, duration, etc.)
 [X] TASK-041 display three types of insights: 1. Predicted probability of success (from the ML model), 2. Funding goal optimization, 3. Feature contribution breakdown
+
+------------------------------------------------
+PHASE 7 — UI ENHANCEMENTS [COMPLETED]
+------------------------------------------------
+
+[X] TASK-042 implement goal optimization curve visualization
+[X] TASK-043 display probability vs goal interactive chart
+
+------------------------------------------------
+PHASE 8 — ADVANCED ANALYTICS & UX
+------------------------------------------------
+
+[X] TASK-044 implement SHAP waterfall-style explanation view
+[X] TASK-045 add dynamic category/subcategory selector from dataset
+[X] TASK-046 implement similar projects comparison panel
+[X] TASK-047 enhance UI layout and visual hierarchy (Streamlit UX improvements)

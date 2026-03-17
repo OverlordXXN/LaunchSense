@@ -14,6 +14,7 @@ from api.schemas import ProjectInput
 from prediction.predictor import predict_success_probability
 from prediction.goal_optimizer import optimize_goal
 from analytics.analytics_engine import build_analytics_features
+from analytics.similarity import calculate_similarity_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,14 @@ async def lifespan(app: FastAPI):
             _CACHE['cat_success'] = df.groupby('category')['category_success_rate'].first().to_dict()
             _CACHE['subcat_success'] = df.groupby('subcategory')['subcategory_success_rate'].first().to_dict()
             _CACHE['global_goal_median'] = df['goal'].median()
+            
+            # Phase 8: Extract category to subcategory mapping for frontend UI dependency
+            cat_to_subcat = df.groupby('category')['subcategory'].unique().apply(list).to_dict()
+            _CACHE['categories_map'] = cat_to_subcat
+            
+            # Phase 8: Cache lightweight historical slice for similarity queries
+            _CACHE['projects_df'] = df[['category', 'subcategory', 'goal', 'campaign_duration', 'is_successful']].copy()
+            
             logger.info("Historical cache mapped successfully from dataset.")
     except Exception as e:
         logger.error(f"Failed to build analytics cache: {e}")
@@ -48,6 +57,36 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/categories")
+def get_categories_endpoint():
+    """
+    Returns the mapped dictionary of all historical Categories and their 
+    associated Subcategories to dynamically populate the UI dropdowns.
+    """
+    mapping = _CACHE.get('categories_map', {})
+    if not mapping:
+        logger.warning("Category cache was empty during /categories request.")
+        # Minimal fallback in case DB is offline but API receives request
+        return {"Technology": ["Web", "Hardware", "Gadgets"]}
+    return mapping
+
+@app.post("/similar-projects")
+def similar_projects_endpoint(payload: ProjectInput):
+    """
+    Filters the in-memory cached historical dataset against the requested inputs
+    to calculate empirical outcomes of 'similar' projects.
+    """
+    try:
+        historical_df = _CACHE.get('projects_df')
+        if historical_df is None or historical_df.empty:
+            raise ValueError("Historical database is not loaded in cache.")
+            
+        metrics = calculate_similarity_metrics(payload.model_dump(), historical_df)
+        return metrics
+    except Exception as e:
+        logger.error(f"API Error processing /similar-projects: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 def _map_to_model_features(input_data: ProjectInput) -> dict:
     """
@@ -131,7 +170,8 @@ def optimize_endpoint(payload: ProjectInput):
             "original_goal": payload.goal,
             "recommended_goal": optimal_goal,
             "expected_success_probability": round(optimal_prob, 4),
-            "improvement_over_original": round(optimal_prob - original_prob, 4)
+            "improvement_over_original": round(optimal_prob - original_prob, 4),
+            "goal_analysis": opt_result.get("goal_analysis", [])
         }
     except Exception as e:
         logger.error(f"API Error processing /optimize: {e}")
