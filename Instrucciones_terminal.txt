@@ -1,0 +1,23 @@
+--------------------------------------------------
+CUANDO ARRANQUE PROYECTO  →  "Empezamos"
+--------------------------------------------------
+Terminal 1 (API):
+  .\venv\Scripts\activate
+  uvicorn src.api.app:app --reload
+
+Terminal 2 (Streamlit):
+  .\venv\Scripts\activate
+  streamlit run demo/streamlit_app.py
+
+--------------------------------------------------
+CUANDO CIERRE PROYECTO  →  "Cerramos"
+--------------------------------------------------
+  Ctrl+C en terminal de la API
+  Ctrl+C en terminal de Streamlit
+
+--------------------------------------------------
+CUANDO GUARDES CAMBIOS  →  "Guardamos"
+--------------------------------------------------
+  git status
+  git add .
+  git commit -m "<mensaje inferido por Oz>"
