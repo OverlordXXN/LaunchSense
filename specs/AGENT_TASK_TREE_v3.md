@@ -83,10 +83,40 @@ PHASE 7 — UI ENHANCEMENTS [COMPLETED]
 [X] TASK-043 display probability vs goal interactive chart
 
 ------------------------------------------------
-PHASE 8 — ADVANCED ANALYTICS & UX
+PHASE 8 — ADVANCED ANALYTICS & UX [COMPLETED]
 ------------------------------------------------
 
 [X] TASK-044 implement SHAP waterfall-style explanation view
 [X] TASK-045 add dynamic category/subcategory selector from dataset
 [X] TASK-046 implement similar projects comparison panel
 [X] TASK-047 enhance UI layout and visual hierarchy (Streamlit UX improvements)
+
+--------------------------------------------------
+PHASE 9 — LIVE DATA PIPELINE (SCRAPING + RETRAINING) [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-053 implement discover page crawler (Kickstarter discover pages with pagination)
+[X] TASK-054 implement project page parser (extract __NEXT_DATA__ JSON and required fields)
+
+[X] TASK-055 implement scraper runner (crawl URLs + parse projects end-to-end)
+[X] TASK-056 persist scraped data to CSV (data/raw/scraped_projects.csv)
+
+[X] TASK-057 implement schema normalization (align scraped data with Kaggle dataset format)
+[X] TASK-058 merge scraped data with historical dataset (data/processed/full_dataset.csv)
+
+[X] TASK-059 implement retraining trigger script (reuse existing training pipeline)
+[X] TASK-060 implement model versioning (models/model_YYYYMMDD.joblib + models/latest.joblib)
+
+[X] TASK-061 update API data loading to use unified dataset (categories + similarity endpoints)
+[X] TASK-062 update API model loading to always use latest model
+
+[X] TASK-063 implement refresh_pipeline.py (scrape → process → retrain end-to-end)
+
+--------------------------------------------------
+PHASE 10 — LIVE DATA PIPELINE (HARDENING & RELIABILITY) [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-064 implement duplicate control in dataset merge
+[X] TASK-065 add logging to pipeline scripts (scraping, dataset update, retraining)
+[X] TASK-066 implement basic error handling in refresh_pipeline
+[X] TASK-067 limit scraping scope (pagination or max projects safeguard)

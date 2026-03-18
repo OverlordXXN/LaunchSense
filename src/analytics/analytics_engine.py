@@ -11,20 +11,35 @@ logger = logging.getLogger(__name__)
 
 def fetch_historical_raw_data() -> pd.DataFrame:
     """
-    Fetches the combined historical dataset from the local PostgreSQL database.
+    Fetches the combined historical dataset from the CSV file.
     """
-    logger.info("Connecting to database to fetch historical projects...")
-    conn = create_connection()
-    query = """
-    SELECT 
-        p.project_id, p.name, p.category, p.subcategory, 
-        p.country, p.currency, p.goal, p.launched_at, p.deadline,
-        s.pledged, s.backers, s.state
-    FROM projects p
-    JOIN project_snapshots s ON p.project_id = s.project_id;
-    """
-    df = pd.read_sql_query(query, conn)
-    conn.close()
+    logger.info("Fetching data from processed CSV instead of database...")
+    csv_path = os.path.join('data', 'processed', 'full_dataset.csv')
+    
+    if not os.path.exists(csv_path):
+        csv_path = os.path.join('data', 'raw', 'kaggle', 'kickstarter_projects.csv')
+        
+    df = pd.read_csv(csv_path)
+    
+    # Map to expected Postgres column names used by analytics and models
+    col_map = {
+        'ID': 'project_id',
+        'Name': 'name',
+        'Category': 'category',
+        'Subcategory': 'subcategory',
+        'Country': 'country',
+        'Launched': 'launched_at',
+        'Deadline': 'deadline',
+        'Goal': 'goal',
+        'Pledged': 'pledged',
+        'Backers': 'backers',
+        'State': 'state'
+    }
+    df = df.rename(columns=col_map)
+    
+    if 'currency' not in df.columns:
+        df['currency'] = 'USD'
+        
     return df
 
 def _compute_competition_density(df: pd.DataFrame) -> pd.DataFrame:

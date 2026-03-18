@@ -32,7 +32,7 @@ def _load_model():
     """Lazily loads the pre-launch XGBoost model if not already in memory."""
     global _MODEL
     if _MODEL is None:
-        model_path = os.path.join(SRC_DIR, 'models', 'kickstarter_launch_predictor.pkl')
+        model_path = os.path.join(ROOT_DIR, 'models', 'latest.joblib')
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Model file not found at {model_path}")
         logger.info(f"Loading prediction model from {model_path}...")
