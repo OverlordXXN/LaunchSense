@@ -9,19 +9,32 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+_session = None
+
+def get_session():
+    global _session
+    if _session is None:
+        _session = requests.Session()
+        _session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+        })
+    return _session
+
 def extract_project_data(url: str) -> dict:
     """
     Extracts project metadata from the embedded __NEXT_DATA__ JSON script.
     """
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-    }
+    session = get_session()
     try:
         logger.info(f"Fetching {url}")
-        res = requests.get(url, headers=headers, timeout=10)
+        res = session.get(url, timeout=10)
         res.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        logger.error(f"HTTP Request failed for {url}: {e}")
+        return None
         
+    try:
         soup = BeautifulSoup(res.text, 'html.parser')
         script_tag = soup.find('script', id='__NEXT_DATA__')
         

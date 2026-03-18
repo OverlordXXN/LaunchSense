@@ -667,3 +667,14 @@ To ensure the pipeline handles continuous execution robustly without creating da
 * **Scraping Limits**: Bounded continuous execution by hardcoding `MAX_PAGES = 5` and `MAX_PROJECTS = 100` natively in `scripts/scrape_kickstarter.py`. This ensures manual MVP tests won't unintentionally scrape the entire Kickstarter network or trip aggressive IP bans.
 
 The system is now reliably executing live data updates.
+
+## Scraper Fix — Handling 403 Forbidden
+
+### Issue
+During scraping ops, Kickstarter returns a `403 Client Error: Forbidden` when accessed via plain `requests.get()`. This is because Kickstarter employs anti-bot protections (like Cloudflare) which block HTTP requests lacking standard browser headers.
+
+### Implementation
+To bypass basic bot detection and restore scraper functionality:
+1. **Header Injection**: All outgoing requests in `src/scraper/crawler.py` and `src/scraper/parser.py` have been updated to include a standard `User-Agent` (Chrome/115.0 on Windows) and an `Accept-Language` header.
+2. **Requests Session**: Instead of using stateless `requests.get()`, both modules now utilize a `requests.Session()` object which retains headers natively across multiple project fetches and optimizes TCP connection reuse.
+3. **Validation**: Requests are wrapped in `raise_for_status()` to catch HTTP errors and gracefully terminate the scrape loop with clear logging.

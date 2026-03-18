@@ -120,3 +120,10 @@ PHASE 10 — LIVE DATA PIPELINE (HARDENING & RELIABILITY) [COMPLETED]
 [X] TASK-065 add logging to pipeline scripts (scraping, dataset update, retraining)
 [X] TASK-066 implement basic error handling in refresh_pipeline
 [X] TASK-067 limit scraping scope (pagination or max projects safeguard)
+--------------------------------------------------
+PATCH TASK — SCRAPER 403 FIX (HEADERS INJECTION) [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-068 update HTTP requests in crawler to include headers
+[X] TASK-069 ensure response validation
+[X] TASK-070 optional: introduce requests.Session()

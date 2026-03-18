@@ -17,17 +17,23 @@ def crawl_discover_page(limit: int = 1) -> list:
     urls = []
     
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
     }
+    
+    session = requests.Session()
+    session.headers.update(headers)
     
     try:
         for page in range(1, limit + 1):
             logger.info(f"Crawling discover page {page}...")
             url = f"{base_url}&page={page}"
-            response = requests.get(url, headers=headers, timeout=10)
-            response.raise_for_status()
+            try:
+                response = session.get(url, timeout=10)
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                logger.error(f"HTTP Request failed for discover page {page}: {e}")
+                break
             
             soup = BeautifulSoup(response.text, 'html.parser')
             page_urls = []
