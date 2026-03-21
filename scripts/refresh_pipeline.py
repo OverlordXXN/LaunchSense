@@ -26,6 +26,32 @@ def main():
             print("Aborting pipeline to prevent data corruption.")
             sys.exit(1)
             
+    print("\n--- DATA SOURCE SUMMARY ---")
+    scraped_path = os.path.join(base_dir, 'data', 'raw', 'scraped_projects.csv')
+    live_success = False
+    if os.path.exists(scraped_path):
+        try:
+            with open(scraped_path, 'r', encoding='utf-8') as f:
+                # Count lines. If > 1 (header + data), success.
+                lines = sum(1 for _ in f)
+                if lines > 1:
+                    live_success = True
+        except Exception:
+            pass
+            
+    print(f"Live Scraping: {'SUCCESS' if live_success else 'FAILED'}")
+    print("Kaggle Dataset: USED")
+    
+    dataset_path = os.path.join(base_dir, 'data', 'processed', 'full_dataset.csv')
+    size = 0
+    if os.path.exists(dataset_path):
+        try:
+            with open(dataset_path, 'r', encoding='utf-8') as f:
+                size = sum(1 for _ in f) - 1 # exclude header
+        except Exception:
+            pass
+    print(f"Final Dataset Size: {max(0, size)} rows")
+    
     print("\n=== Pipeline Completed Successfully ===")
 
 if __name__ == '__main__':

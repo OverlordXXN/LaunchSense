@@ -50,7 +50,7 @@ def _compute_competition_density(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Computing competition density (+/- 30 days)...")
     
     # Sort dataframe by launched_at
-    idx_orig = df['project_id'].copy()
+    df['_orig_index'] = np.arange(len(df))
     df = df.sort_values('launched_at').reset_index(drop=True)
     
     # Needs to be purely numeric offsets for numpy
@@ -87,8 +87,7 @@ def _compute_competition_density(df: pd.DataFrame) -> pd.DataFrame:
     df['competition_density'] = density_values
     
     # Restore original index
-    df.index = df['project_id']
-    df = df.reindex(idx_orig).reset_index(drop=True)
+    df = df.sort_values('_orig_index').drop(columns=['_orig_index']).reset_index(drop=True)
     
     return df
 
@@ -106,8 +105,18 @@ def build_analytics_features() -> pd.DataFrame:
     logger.info(f"Loaded {len(df)} projects. Computing features...")
     
     # 0. Set up date boundaries correctly
-    df['launched_at'] = pd.to_datetime(df['launched_at'])
-    df['deadline'] = pd.to_datetime(df['deadline'])
+    df['launched_at'] = pd.to_datetime(df['launched_at'], errors='coerce', infer_datetime_format=True)
+    df['deadline'] = pd.to_datetime(df['deadline'], errors='coerce', infer_datetime_format=True)
+    
+    # Phase 11 Patch: Handle invalid dates
+    initial_len = len(df)
+    df = df.dropna(subset=['launched_at'])
+    df = df[df['launched_at'].dt.year >= 2005]
+    dropped_rows = initial_len - len(df)
+    
+    if dropped_rows > 0:
+        logger.warning(f"Dropped {dropped_rows} rows due to invalid or unrealistic 'launched_at' dates.")
+
     df['duration_days'] = (df['deadline'] - df['launched_at']).dt.days
 
     # Extract temporal features

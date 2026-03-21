@@ -1,23 +1,41 @@
 --------------------------------------------------
-CUANDO ARRANQUE PROYECTO  →  "Empezamos"
+WHEN STARTING TO WORK ON THE PROJECT
 --------------------------------------------------
-Terminal 1 (API):
-  .\venv\Scripts\activate
-  uvicorn src.api.app:app --reload
 
-Terminal 2 (Streamlit):
-  .\venv\Scripts\activate
-  streamlit run demo/streamlit_app.py
+TERMINAL 1 - LAUNCH API
+
+cd Proyecto_Kickstarter
+.\venv\Scripts\activate
+uvicorn src.api.app:app --reload
+
+TERMINAL 2 - LAUNCH WEB
+
+cd Proyecto_Kickstarter
+.\venv\Scripts\activate
+streamlit run demo/streamlit_app.py
 
 --------------------------------------------------
-CUANDO CIERRE PROYECTO  →  "Cerramos"
+WHEN REFRESHING PIPELINE (Scraping + Merge Datasets Históricos + Gen Full Dataset + Retrain model)
 --------------------------------------------------
-  Ctrl+C en terminal de la API
-  Ctrl+C en terminal de Streamlit
+.\venv\Scripts\actívate
+python scripts/refresh_pipeline.py
+--------------------------------------------------
+WHEN TRAINING MODEL - NO NEW DATA
+--------------------------------------------------
+.\venv\Scripts\activate
+python scripts/retrain_model.py
+--------------------------------------------------
+WHEN STOPPING WORK ON THE PROJECT
+--------------------------------------------------
+
+cntrl + C TO TURN OFF API AND WEB
+deactivate TO TURN OFF venv IF NECESSARY
 
 --------------------------------------------------
-CUANDO GUARDES CAMBIOS  →  "Guardamos"
+WHEN CHANGES ARE MADE IN THE PROJECT
 --------------------------------------------------
-  git status
-  git add .
-  git commit -m "<mensaje inferido por Oz>"
+git status
+
+git add .
+
+git commit -m "Insert comments about changes made"

@@ -127,3 +127,109 @@ PATCH TASK — SCRAPER 403 FIX (HEADERS INJECTION) [COMPLETED]
 [X] TASK-068 update HTTP requests in crawler to include headers
 [X] TASK-069 ensure response validation
 [X] TASK-070 optional: introduce requests.Session()
+[X] TASK-071 — GRACEFUL SCRAPER FAILURE HANDLING
+
+--------------------------------------------------
+PHASE 11 — DATASET UPDATE (MULTI-SOURCE MERGE) [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-072 update_dataset.py logic to handle kaggle_may_2025 dataset
+[X] TASK-073 extract launch_year and maintain data_source fields
+
+--------------------------------------------------
+PHASE 11 PATCH — ROBUST DATETIME PARSING [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-074 handle heterogeneous dates avoiding crashes inside analytics engine
+
+--------------------------------------------------
+PHASE 12 — TEMPORAL MODEL ENHANCEMENT (DRIFT-AWARE) [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-075 Train Baseline vs Enhanced tracking concept drift over launch_year
+[X] TASK-076 Analyze SHAP global metrics testing modern data (>= 2020)
+
+--------------------------------------------------
+PHASE 13 — PRODUCTION MODEL STRATEGY (DRIFT-OPTIMIZED) [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-077 Implement data filtering inside pre-launch XGBoost trainer natively (>= 2020)
+[X] TASK-078 Hook scripts/retrain_model.py to trigger drift-model updates into models/latest.joblib and models/model_recent.joblib
+[X] TASK-079 Embed modern assumptions warning strictly into src/prediction/predictor.py
+
+--------------------------------------------------
+PHASE 14 — MODEL VALIDATION & TRUST LAYER [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-080 Configure API structure passing `confidence_level` arrays alongside out-of-bounds `warning_flags` natively
+[X] TASK-081 Inject sklearn `calibration_curve` diagnostics inside XGBClassifier evaluation loops
+[X] TASK-082 Modify `streamlit_app.py` natively surfacing dynamic warning bounds immediately above prediction rendering
+
+--------------------------------------------------
+PHASE 15 — UX POLISH & HUMAN-FRIENDLY INPUTS [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-083 Map model month ranges onto `Jan-Dec` dictionaries seamlessly within the Streamlit payload array
+[X] TASK-084 Translate daily numeric keys into standard `Mon-Sun` frontend displays preserving model mapping hooks
+[X] TASK-085 Deploy temporal tracking disclaimers explicitly inside UI presentation parameters identifying `2020+` boundaries
+
+--------------------------------------------------
+BUGFIX PATCH — CATEGORY ENDPOINT FAULT TOLERANCE [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-086 Refactor `/categories` decoupling mappings from ML dataset builders natively tracking `full_dataset.csv` directly
+[X] TASK-087 Implement column normalization masking `category` and `subcategory` anomalies explicitly preventing query crashes
+[X] TASK-088 Wrap dynamic dataset slices mapping safely inside `try/except` responding `{"Category": ["Sub"]}` identically masking 500 runtime faults
+
+--------------------------------------------------
+IMPROVEMENT PATCH — CATEGORY ENDPOINT TRANSPARENCY [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-086 Refactor `/categories` decoupling mappings from ML dataset builders natively tracking `full_dataset.csv` directly
+[X] TASK-087 Implement column normalization masking `category` and `subcategory` anomalies explicitly preventing query crashes
+[X] TASK-088 Wrap dynamic dataset slices mapping safely inside `try/except` responding `{"Category": ["Sub"]}` identically masking 500 runtime faults
+
+--------------------------------------------------
+IMPROVEMENT PATCH — CATEGORY ENDPOINT TRANSPARENCY [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-089 Refactor `/categories` payload mapping explicitly identifying `{"source": "dataset", "mapping": {...}}` natively.
+[X] TASK-090 Modify Streamlit integrations securely rendering `st.warning()` dynamic boundaries explicitly when `source == "fallback"`.
+
+--------------------------------------------------
+PHASE 16 — TEXT NORMALIZATION & UX POLISH (CATEGORY LABELS) [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-091 Improve category text normalization bypassing raw `.title()` logic 
+[X] TASK-092 Fix apostrophe casing issues applying `re.sub(r"'S\b", "'s", ...)` bindings actively 
+[X] TASK-093 Handle acronym formatting preserving `DIY`, `Sci-Fi`, and `3D` natively
+
+--------------------------------------------------
+PHASE 17 — UX ENHANCEMENTS (AUTOCOMPLETE & COMPARISON) [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-094 Implement category UI Autocompletes rendering native `index=None` validating API payload defaults implicitly
+[X] TASK-095 Architect Scenario Chart abstractions querying multiple prediction payload variants across distinct goals natively using Streamlit `st.bar_chart()`
+
+--------------------------------------------------
+PHASE 18 — FINAL UX POLISH [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-096 Refine Streamlit interactive scenario arrays mapping explicit 5-point distributions `(-50%, -25%, Base, +25%, +50%)` natively plotting success decay probabilities across dynamic `st.line_chart` graphics natively.
+
+--------------------------------------------------
+PHASE 19 — API PERFORMANCE & RESILIENCE (CATEGORIES ENDPOINT) [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-097 Cache category mappings migrating heavy payloads instantly intercepting at API startup  
+[X] TASK-098 Prevent per-request heavy Pandas dataframe extraction scanning via `/categories`  
+[X] TASK-099 Add API fallback safety structures neutralizing `500` dataset load failures natively 
+[X] TASK-100 Increase Streamlit connectivity layers executing `timeout=20` mapping offline retry loops 
+[X] TASK-101 Enforce frontend UI resilience validating `@st.cache_data` structures reliably
+
+--------------------------------------------------
+PHASE 20 — CONTEXTUAL INSIGHT ALIGNMENT [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-102 Resolve conflicting messaging mapping ML optimization recommendations natively against Historical Context insights 
+[X] TASK-103 Implement conditional 3-scenario evaluations comparing `rec_goal` precisely evaluating (+/- 10%) boundaries without contradictions

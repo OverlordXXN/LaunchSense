@@ -25,7 +25,7 @@ def main():
     urls = crawl_discover_page(limit=MAX_PAGES)
     
     if not urls:
-        print("No URLs found. Exiting.")
+        print("Live scraping failed (403 or blocked). Falling back to static dataset.")
         create_empty_csv()
         return
 

@@ -67,6 +67,7 @@ def predict_success_probability(project_inputs: dict, include_contributions: boo
     Returns success probability and predicted class designation.
     Optionally includes SHAP feature contributions.
     """
+    logger.info("Predicting success probability using drift-optimized model trained on >= 2020 data.")
     model = _load_model()
     
     # Map raw inputs to model space
@@ -80,9 +81,23 @@ def predict_success_probability(project_inputs: dict, include_contributions: boo
     predicted_class_idx = model.predict(feature_vector)[0]
     predicted_class_str = "Successful" if predicted_class_idx == 1 else "Failed"
     
+    # Evaluate Validation & Trust constraints (Phase 14)
+    confidence_level = "High" if success_probability > 0.7 else "Medium" if success_probability >= 0.5 else "Low"
+    warning_flags = []
+    
+    goal_val = project_inputs.get('goal', 0)
+    duration_val = project_inputs.get('campaign_duration', 30)
+    
+    if goal_val > 100000:
+        warning_flags.append("Warning: Exceptionally high funding goal requested. Models are inherently less confident estimating magnitudes outside normal user limits (>100k).")
+    if duration_val > 60:
+        warning_flags.append("Warning: Unusually long campaign duration. Campaigns exceeding optimal timelines suffer from diminished pledge curves.")
+        
     output = {
         "success_probability": round(success_probability, 4),
-        "predicted_class": predicted_class_str
+        "predicted_class": predicted_class_str,
+        "confidence_level": confidence_level,
+        "warning_flags": warning_flags
     }
     
     if include_contributions:
@@ -95,16 +110,16 @@ def predict_success_probability(project_inputs: dict, include_contributions: boo
 if __name__ == '__main__':
     logger.info("Executing prediction module test interface...")
     
-    # Example test data
+    # Example test data triggering Phase 14 warnings
     test_inputs = {
-        'goal': 15000,
-        'goal_realism_score': 0.55,
+        'goal': 150000,
+        'goal_realism_score': 0.15,
         'category_success_rate': 0.41,
         'subcategory_success_rate': 0.47,
         'competition_density': 0.12,
         'launch_month': 5,
         'launch_day_of_week': 2,
-        'campaign_duration': 30
+        'campaign_duration': 90
     }
     
     logger.info(f"Test Inputs:\n{pd.Series(test_inputs)}")
@@ -113,6 +128,11 @@ if __name__ == '__main__':
         result = predict_success_probability(test_inputs)
         print("\n--- Model Prediction ---")
         print(f"Predicted Class:       {result['predicted_class']}")
-        print(f"Success Probability:   {result['success_probability'] * 100:.2f}%\n")
+        print(f"Success Probability:   {result['success_probability'] * 100:.2f}%")
+        print(f"Confidence Level:      {result.get('confidence_level')}")
+        if result.get("warning_flags"):
+            print("\nWarnings:")
+            for w in result['warning_flags']:
+                print(f" - {w}")
     except Exception as e:
         logger.error(f"Prediction failed: {e}")
