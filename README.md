@@ -137,6 +137,17 @@ streamlit run demo/streamlit_app.py
 
 ------------------------------------------------------------------------
 
+## 📸 Demo
+
+### 🎯 Prediction & Optimization
+![Dashboard](dashboard.png)
+
+### 📊 Scenario Simulation
+![Scenario](scenario.png)
+
+### 🧠 Model Explainability
+![SHAP](shap.png)
+
 ### ⚠️ Aviso
 
 No afiliado a Kickstarter. Uso educativo/prototipo.
