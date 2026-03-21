@@ -140,13 +140,13 @@ streamlit run demo/streamlit_app.py
 ## 📸 Demo
 
 ### 🎯 Prediction & Optimization
-![Dashboard](dashboard.png)
+![Dashboard](assets/dashboard.png)
 
 ### 📊 Scenario Simulation
-![Scenario](scenario.png)
+![Scenario](assets/scenario.png)
 
 ### 🧠 Model Explainability
-![SHAP](shap.png)
+![SHAP](assets/shap.png)
 
 ### ⚠️ Aviso
 
