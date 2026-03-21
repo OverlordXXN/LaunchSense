@@ -1,5 +1,5 @@
 # 🚀 LaunchSense --- AI Crowdfunding Success Simulator
-
+> 🚀 End-to-end machine learning product for predicting and optimizing crowdfunding success.
 ## 🇬🇧 English
 
 **LaunchSense** is an end-to-end machine learning system designed to
