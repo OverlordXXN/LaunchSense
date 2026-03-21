@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🚀 LaunchSense --- AI Crowdfunding Success Simulator
 
 ## 🇬🇧 English
@@ -141,7 +140,3 @@ streamlit run demo/streamlit_app.py
 ### ⚠️ Aviso
 
 No afiliado a Kickstarter. Uso educativo/prototipo.
-=======
-# LaunchSense
-AI-powered crowdfunding success simulator with prediction, goal optimization and explainable insights.
->>>>>>> d0bc7c8eb9898ec3ed616c6ac4cea067b2a3c0a8
