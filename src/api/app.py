@@ -57,6 +57,83 @@ STATIC_CATEGORIES = {
     "Crafts": ["Woodworking", "DIY", "Crafts", "Candles", "Crochet", "Embroidery", "Glass", "Knitting", "Macrame", "Pottery", "Printing", "Quilts", "Stationery", "Taxidermy", "Weaving"]
 }
 
+historical_df = None
+
+def load_historical_dataset():
+    csv_path = ROOT / "data" / "processed" / "full_dataset.csv"
+    gz_path = ROOT / "data" / "processed" / "full_dataset.csv.gz"
+    fallback_path = ROOT / "data" / "raw" / "kaggle" / "kickstarter_projects.csv"
+
+    if csv_path.exists():
+        target = csv_path
+        comp = None
+    elif gz_path.exists():
+        target = gz_path
+        comp = "gzip"
+    elif fallback_path.exists():
+        target = fallback_path
+        comp = None
+    else:
+        return None
+        
+    try:
+        df = pd.read_csv(target, compression=comp) if comp else pd.read_csv(target)
+        # Normalize columns so historical search works natively regardless of dataset used
+        col_map = {c: c.lower().replace(" ", "_") for c in df.columns}
+        df = df.rename(columns=col_map)
+        
+        # Ensure standard keys
+        if "name" in df.columns and "title" not in df.columns:
+            df["title"] = df["name"]
+        if "usd_pledged" in df.columns and "pledged" not in df.columns:
+            df["pledged"] = df["usd_pledged"]
+        if "is_successful" in df.columns and "success" not in df.columns:
+            df["success"] = df["is_successful"]
+        elif "state" in df.columns and "success" not in df.columns:
+            df["success"] = (df["state"].astype(str).str.lower() == "successful")
+            
+        return df
+    except Exception as e:
+        logger.error(f"Failed to load historical dataset from {target}: {e}")
+        return None
+
+def find_similar_projects(payload: ProjectInput, df: pd.DataFrame, top_n=5) -> list:
+    if df is None or df.empty:
+        return []
+        
+    mask = (df["category"].str.lower() == payload.category.lower())
+    if not mask.any():
+        return []
+        
+    calc_df = df[mask].copy()
+    
+    # Calculate simple distance normalized to 0-1
+    # distance = abs(log(project_goal) - log(target_goal))
+    calc_df["goal_diff"] = np.abs(np.log1p(calc_df["goal"].fillna(0)) - np.log1p(payload.goal))
+    
+    # If duration exists
+    if "campaign_duration" in calc_df.columns:
+        calc_df["dur_diff"] = np.abs(calc_df["campaign_duration"] - payload.campaign_duration) / payload.campaign_duration
+    else:
+        calc_df["dur_diff"] = 0
+        
+    calc_df["distance"] = calc_df["goal_diff"] + calc_df["dur_diff"]
+    calc_df["similarity"] = 1 / (1 + calc_df["distance"])
+    
+    top = calc_df.sort_values("similarity", ascending=False).head(top_n)
+    
+    results = []
+    for _, row in top.iterrows():
+        results.append({
+            "title": str(row.get("title", "Unknown Project")),
+            "category": str(row.get("category", payload.category)),
+            "goal": float(row.get("goal", 0)),
+            "pledged": float(row.get("pledged", 0)),
+            "success": bool(row.get("success", False)),
+            "similarity": float(row["similarity"])
+        })
+    return results
+
 def clean_label(text: str) -> str:
     """Normalize string casing fixing apostrophes and acronyms overriding .title() anomalies."""
     if pd.isna(text) or not str(text).strip():
@@ -248,10 +325,20 @@ def predict_endpoint(payload: ProjectInput, include_contributions: bool = True):
         opt_result = optimize_goal(model_inputs)
         
         # 3. Similar Projects request
-        historical_df = _CACHE.get('projects_df')
+        historical_df = globals().get('historical_df')
         if historical_df is not None and not historical_df.empty:
-            sim_result = calculate_similarity_metrics(payload.model_dump(), historical_df)
+            historical_available = True
+            sim_projs = find_similar_projects(payload, historical_df, top_n=5)
+            
+            # Additional aggregate metrics
+            historical_proj_df = _CACHE.get('projects_df')
+            if historical_proj_df is not None and not historical_proj_df.empty:
+                sim_result = calculate_similarity_metrics(payload.model_dump(), historical_proj_df)
+            else:
+                sim_result = {}
         else:
+            historical_available = False
+            sim_projs = []
             sim_result = {}
         
         # Return merged JSON structure securely dictating new taxonomy matching UI streams
@@ -270,11 +357,13 @@ def predict_endpoint(payload: ProjectInput, include_contributions: bool = True):
                 "expected_probability": opt_result.get("optimal_probability", pred_result["success_probability"]),
                 "improvement": opt_result.get("optimal_probability", pred_result["success_probability"]) - pred_result["success_probability"]
             },
+            "historical_available": historical_available,
+            "similar_projects": sim_projs,
             "historical": {
-                "win_rate": sim_result.get("historical_success_rate", 0),
-                "avg_goal": sim_result.get("average_goal", 0),
-                "avg_duration": sim_result.get("average_duration", 0),
-                "sample_size": sim_result.get("similar_projects_found", 0)
+                "win_rate": sim_result.get("historical_success_rate", 0) if historical_available else 0,
+                "avg_goal": sim_result.get("average_goal", 0) if historical_available else 0,
+                "avg_duration": sim_result.get("average_duration", 0) if historical_available else 0,
+                "sample_size": sim_result.get("similar_projects_found", 0) if historical_available else 0
             }
         }
     except Exception as e:

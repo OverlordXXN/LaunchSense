@@ -365,3 +365,14 @@ PHASE 33 — RENDER COLD START TIMEOUT HANDLING [COMPLETED]
 [X] TASK-188 Add retry logic on timeout (retry once automatically, max retries = 2)
 [X] TASK-189 Do not mark API offline on first timeout, only after retry fails
 [X] TASK-190 Improve error message to "AI engine waking up (first request may take ~30s)"
+
+--------------------------------------------------
+PHASE 34 — RESTORE HISTORICAL CONTEXT DATASET [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-191 Re-enable dataset-backed similarity engine in src/api/app.py loading data/processed/full_dataset.csv or fallback data/raw/kaggle/kickstarter_projects.csv
+[X] TASK-192 If dataset exists load into global dataframe: historical_df
+[X] TASK-193 Re-enable similar project search (cosine/NN) returning similar_projects lists []
+[X] TASK-194 Return similar_projects inside /predict payload
+[X] TASK-195 If dataset missing, return "historical_available": false
+[X] TASK-196 In Streamlit UI, if historical_available false hide Historical Context section entirely

@@ -249,34 +249,40 @@ with main_col2:
             st.divider()
                 
             # LAYER 4: Similar Projects Context
-            st.header("Historical Context")
-            st.write("Compare your idea against identical real-world campaigns from our dataset.")
-            sim_data = predict_data.get("historical", {})
-            
-            count = sim_data.get("sample_size", 0)
-            if count > 0:
-                conf = predict_data.get("confidence", "Unknown")
-                success_rate = sim_data.get("win_rate", 0) * 100
-                avg_goal = sim_data.get("avg_goal", 0)
-                avg_duration = sim_data.get("avg_duration", 0)
+            if predict_data.get("historical_available", False):
+                st.header("Historical Context")
+                st.write("Compare your idea against identical real-world campaigns from our dataset.")
+                sim_data = predict_data.get("historical", {})
                 
-                st.markdown(f"**{count:,}** mathematically similar historical projects found (`{conf}` confidence).")
-                
-                scol1, scol2, scol3 = st.columns(3)
-                scol1.metric("Historical Win Rate", f"{success_rate:.1f}%")
-                scol2.metric("Avg Competitor Goal", f"${avg_goal:,.0f}")
-                scol3.metric("Avg Duration", f"{avg_duration:.0f} days")
-                
-                if conf == "Low" or avg_goal <= 0:
-                    st.caption("ℹ️ Historical data is sparse or low confidence for this specific setup. Use these averages purely as rough estimates.")
-                elif rec_goal > (avg_goal * 1.10):
-                    st.caption("⚠️ Your recommended goal is higher than similar projects. This suggests your project may require stronger positioning or differentiation to succeed at this level.")
-                elif rec_goal < (avg_goal * 0.90):
-                    st.caption("✅ Reducing your goal aligns with historical trends and improves your chances of success.")
+                count = sim_data.get("sample_size", 0)
+                if count > 0:
+                    conf = predict_data.get("confidence", "Unknown")
+                    success_rate = sim_data.get("win_rate", 0) * 100
+                    avg_goal = sim_data.get("avg_goal", 0)
+                    avg_duration = sim_data.get("avg_duration", 0)
+                    
+                    st.markdown(f"**{count:,}** mathematically similar historical projects found (`{conf}` confidence).")
+                    
+                    scol1, scol2, scol3 = st.columns(3)
+                    scol1.metric("Historical Win Rate", f"{success_rate:.1f}%")
+                    scol2.metric("Avg Competitor Goal", f"${avg_goal:,.0f}")
+                    scol3.metric("Avg Duration", f"{avg_duration:.0f} days")
+                    
+                    if conf == "Low" or avg_goal <= 0:
+                        st.caption("ℹ️ Historical data is sparse or low confidence for this specific setup. Use these averages purely as rough estimates.")
+                    elif rec_goal > (avg_goal * 1.10):
+                        st.caption("⚠️ Your recommended goal is higher than similar projects. This suggests your project may require stronger positioning or differentiation to succeed at this level.")
+                    elif rec_goal < (avg_goal * 0.90):
+                        st.caption("✅ Reducing your goal aligns with historical trends and improves your chances of success.")
+                    else:
+                        st.caption("✅ Your goal is well aligned with historical successful campaigns.")
+                        
+                    sim_projs = predict_data.get("similar_projects", [])
+                    if sim_projs:
+                        st.subheader("Top Similar Projects")
+                        st.dataframe(sim_projs, use_container_width=True)
                 else:
-                    st.caption("✅ Your goal is well aligned with historical successful campaigns.")
-            else:
-                st.warning("No substantially similar historical projects were found in the dataset.")
+                    st.warning("No substantially similar historical projects were found in the dataset.")
                     
             # LAYER 5: Scenario Comparison
             st.divider()

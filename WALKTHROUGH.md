@@ -827,3 +827,15 @@ Enhance robust latency tolerance managing Render's sleep-cycles explicitly handl
 2. **UI Warming Cues (`TASK-187`)**: Injected synchronous frontend awareness replacing standard `Analyzing...` spinners with concrete explicit wait expectations `Starting AI engine (cold start may take ~30s)...` conditioning user expectations proactively.
 3. **Recursive API Forgiveness (`TASK-188 & TASK-189`)**: Bypassed immediate application locking wrapping explicit prediction calls within `max_retries = 2` iterative loops. Online execution is solely stripped into `api_online = False` strictly upon total recurring iteration exhaustion masking single drops entirely.
 4. **Targeted Backend Messages (`TASK-190`)**: Translated aggressive failure exceptions (`Prediction Backend Offline!`) gracefully targeting specific `AI engine waking up (first request may take ~30s). Please try again.` directives preserving deployment immersion purely protecting UX boundaries natively.
+
+---
+
+## Phase 34 — Restore Historical Context Dataset
+
+### Objective
+Reignite empirical `Historical Context` validations merging identical real-world project outcomes directly into the primary UI inference endpoints. Prevent Streamlit crashes gracefully hiding unavailable arrays dynamically checking fallback CSV representations natively.
+
+### Implementation Details
+1. **Dynamic Universal Loader (`TASK-191 & TASK-192`)**: Constructed a fallback parsing algorithm loading `full_dataset.csv` defaulting gracefully onto raw `kaggle/kickstarter_projects.csv`. Injected a global schema-normalization sweep explicitly translating disparate dataset structures mapped seamlessly into generalized `[title, category, goal, pledged, success]` properties. Exposed the object globally across API mounts handling similarity queries directly.
+2. **Nearest-Neighbor Cosine Routing (`TASK-193 & TASK-194`)**: Bootstrapped native `find_similar_projects` mathematical routines inside `src/api/app.py` returning precise distance derivatives (incorporating logical goal variations + proportional duration targets natively isolating top 5 nearest neighbors exactly). Spliced evaluations strictly merging within `/predict` targets universally validating architectures.
+3. **UI Boolean Toggle Hook (`TASK-195 & TASK-196`)**: Appended native `"historical_available": True|False` JSON metrics bounding prediction payloads conditionally displaying DataFrame visualizations. Refactored `st.warning()` omissions stripping Streamlit layout rendering securely masking errors organically without exception halts.

@@ -13,6 +13,9 @@ venv/
 data/raw/*
 data/processed/*
 
+# allow production dataset
+!data/processed/full_dataset.csv.gz
+
 # Models
 models/*
 !models/latest.joblib
