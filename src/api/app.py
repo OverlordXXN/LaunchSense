@@ -20,11 +20,30 @@ from analytics.similarity import calculate_similarity_metrics
 
 logger = logging.getLogger(__name__)
 
+from typing import Dict, Any
+
 # Global cache to map raw text to numerical historical features
-_CACHE = {
+_CACHE: Dict[str, Any] = {
     'cat_success': {},
     'subcat_success': {},
     'global_goal_median': 5000.0,
+}
+
+STATIC_CATEGORIES = {
+    "Technology": ["Hardware", "Web", "Software", "Apps", "Gadgets", "Robots", "DIY Electronics"],
+    "Games": ["Tabletop Games", "Video Games", "Playing Cards", "Puzzles", "Mobile Games", "Live Games"],
+    "Art": ["Painting", "Digital Art", "Illustration", "Public Art", "Sculpture", "Mixed Media", "Conceptual Art", "Ceramics", "Textiles", "Installations", "Video Art"],
+    "Design": ["Product Design", "Graphic Design", "Architecture", "Interactive Design", "Typography", "Civic Design"],
+    "Film & Video": ["Documentary", "Shorts", "Animation", "Webseries", "Narrative Film", "Music Videos", "Action", "Comedy", "Drama", "Family", "Fantasy", "Horror", "Romance", "Science Fiction", "Thrillers"],
+    "Publishing": ["Fiction", "Nonfiction", "Art Books", "Children's Books", "Periodical", "Poetry", "Radio & Podcasts", "Zines", "Academic", "Anthologies", "Calendars", "Comedy", "Letterpress", "Literary Journals", "Translations", "Young Adult"],
+    "Music": ["Indie Rock", "Pop", "Rock", "Jazz", "Electronic", "Classical Music", "Hip-Hop", "Punk", "Country & Folk", "World Music", "Metal", "R&B", "Blues", "Chiptune", "Faith", "Kids", "Latin"],
+    "Food": ["Restaurants", "Food Trucks", "Drinks", "Small Batch", "Farms", "Vegan", "Events", "Community Gardens", "Spaces", "Bacon", "Cookbooks", "Farmer's Markets"],
+    "Fashion": ["Apparel", "Accessories", "Footwear", "Jewelry", "Ready-to-wear", "Childrenswear", "Couture", "Pet Fashion"],
+    "Comics": ["Comic Books", "Graphic Novels", "Webcomics", "Anthologies", "Events"],
+    "Photography": ["Photobooks", "Fine Art", "People", "Places", "Nature", "Animals"],
+    "Theater": ["Plays", "Musicals", "Festivals", "Experimental", "Immersive", "Spaces", "Comedy"],
+    "Dance": ["Performances", "Workshops", "Residencies", "Spaces"],
+    "Crafts": ["Woodworking", "DIY", "Crafts", "Candles", "Crochet", "Embroidery", "Glass", "Knitting", "Macrame", "Pottery", "Printing", "Quilts", "Stationery", "Taxidermy", "Weaving"]
 }
 
 def clean_label(text: str) -> str:
@@ -57,7 +76,13 @@ async def lifespan(app: FastAPI):
     try:
         import time
         t0 = time.time()
-        df = build_analytics_features()
+        
+        try:
+            df = build_analytics_features()
+        except Exception as feature_err:
+            logger.warning(f"Dataset unavailable for feature building: {feature_err}")
+            df = pd.DataFrame()
+            
         if not df.empty:
             _CACHE['cat_success'] = df.groupby('category')['category_success_rate'].first().to_dict()
             _CACHE['subcat_success'] = df.groupby('subcategory')['subcategory_success_rate'].first().to_dict()
@@ -134,21 +159,13 @@ def get_categories_endpoint():
         else:
             return {
                 "source": "fallback",
-                "mapping": {
-                    "Technology": ["Web", "Hardware", "Gadgets"],
-                    "Games": ["Tabletop Games", "Video Games"],
-                    "Art": ["Painting", "Digital Art"]
-                }
+                "mapping": STATIC_CATEGORIES
             }
     except Exception as e:
         logger.error(f"API Error processing /categories: {e}")
         return {
             "source": "fallback",
-            "mapping": {
-                "Technology": ["Web", "Hardware", "Gadgets"],
-                "Games": ["Tabletop Games", "Video Games"],
-                "Art": ["Painting", "Digital Art"]
-            }
+            "mapping": STATIC_CATEGORIES
         }
 
 @app.post("/similar-projects")
@@ -160,13 +177,13 @@ def similar_projects_endpoint(payload: ProjectInput):
     try:
         historical_df = _CACHE.get('projects_df')
         if historical_df is None or historical_df.empty:
-            raise ValueError("Historical database is not loaded in cache.")
+            return {"status": "unavailable"}
             
         metrics = calculate_similarity_metrics(payload.model_dump(), historical_df)
         return metrics
     except Exception as e:
         logger.error(f"API Error processing /similar-projects: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"status": "unavailable"}
 
 def _map_to_model_features(input_data: ProjectInput) -> dict:
     """

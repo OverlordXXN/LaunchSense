@@ -718,3 +718,15 @@ To apply final production UI polish, legal disclaimers, and open-source branding
 1. **Header Rebranding (`TASK-113 & TASK-114`)**: Migrated the generic application title to the formalized **LaunchSense** brand, positioned alongside a descriptive subtitle articulating the purpose of the ML simulator. 
 2. **Legal Attributions (`TASK-115 & TASK-119`)**: Added explicit disclaimers declaring independence from Kickstarter PBC globally at both the immediate subtitle point of origin and the terminal footer, securing safe trademark utilization.
 3. **UX Enhancements (`TASK-116 & TASK-117 & TASK-118`)**: Embedded the open-source GitHub repository URL seamlessly into the layout configuration, added explicit color-coded icons to the Standalone toggle, and finalized a versioned footer (`v1.0`).
+
+---
+
+## Phase 25 — API Production Decoupling (Dataset-Free Backend)
+
+### Objective
+To explicitly purge the `FastAPI` instance from requiring a raw historical datastore disk dependency (`full_dataset.csv` or similar SQL loads), enabling a pure model-inference backend.
+
+### Implementation Details
+1. **Startup Hardening (`TASK-124`)**: Heavily wrapped the `lifespan` execution contexts catching exceptions explicitly. If `analytics_engine` fails to parse a dataset, `_CACHE` operates purely conceptually.
+2. **Static Types (`TASK-125`)**: Defined a hardcoded `STATIC_CATEGORIES` dictionary injected natively via `app.get("/categories")`. If the system fails to read `csv`, categorical routing acts exactly identical.
+3. **Inference Decoupling (`TASK-126` & `TASK-127`)**: The model evaluation pipeline defaults dynamically mapping zero instances back to normalized rates via `get()`. The similar-project endpoint successfully returns `{"status": "unavailable"}` gracefully if memory buffers lack `projects_df`.

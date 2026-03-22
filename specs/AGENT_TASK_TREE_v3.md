@@ -264,3 +264,12 @@ PHASE 23 — BRANDING & PRODUCTION POLISH [COMPLETED]
 [X] TASK-117 add Cloud Mode indicator styling
 [X] TASK-118 add footer with version and dataset attribution
 [X] TASK-119 add data source attribution (Kickstarter safe wording)
+
+--------------------------------------------------
+PHASE 25 — DATASET DECOUPLING [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-124 remove CSV dependency from API startup
+[X] TASK-125 implement static category mapping in backend
+[X] TASK-126 ensure prediction works using only trained model
+[X] TASK-127 gracefully disable historical analytics if dataset missing
