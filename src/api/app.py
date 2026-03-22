@@ -12,10 +12,9 @@ import re
 import joblib
 from pathlib import Path
 
-# Provide a root evaluation strictly locally mapped for internal ML inferences
-SRC_DIR = str(Path(__file__).resolve().parents[1])
-
-MODEL_PATH = Path(SRC_DIR).parent / "models" / "latest.joblib"
+ROOT = Path(__file__).resolve().parents[2]
+SRC_DIR = str(ROOT / "src")
+MODEL_PATH = ROOT / "models" / "latest.joblib"
 model = None
 
 def get_model():
@@ -248,14 +247,35 @@ def predict_endpoint(payload: ProjectInput, include_contributions: bool = True):
         # 2. Goal optimization request
         opt_result = optimize_goal(model_inputs)
         
-        # Return merged JSON structure
+        # 3. Similar Projects request
+        historical_df = _CACHE.get('projects_df')
+        if historical_df is not None and not historical_df.empty:
+            sim_result = calculate_similarity_metrics(payload.model_dump(), historical_df)
+        else:
+            sim_result = {}
+        
+        # Return merged JSON structure securely dictating new taxonomy matching UI streams
+        contribs = pred_result.get("feature_contributions", {})
+        br = pred_result.get("base_rate", 0.0)
+        
         return {
-            "success_probability": pred_result["success_probability"],
-            "predicted_class": pred_result["predicted_class"],
-            "confidence_level": pred_result.get("confidence_level", "Unknown"),
-            "warning_flags": pred_result.get("warning_flags", []),
-            "optimal_goal": opt_result["optimal_goal"],
-            "feature_contributions": pred_result.get("feature_contributions", {})
+            "probability": pred_result["success_probability"],
+            "outcome": pred_result["predicted_class"],
+            "confidence": pred_result.get("confidence_level", "Unknown"),
+            "shap_values": list(contribs.values()),
+            "feature_names": list(contribs.keys()),
+            "base_rate": br,
+            "optimization": {
+                "recommended_goal": opt_result.get("optimal_goal", payload.goal),
+                "expected_probability": opt_result.get("optimal_probability", pred_result["success_probability"]),
+                "improvement": opt_result.get("optimal_probability", pred_result["success_probability"]) - pred_result["success_probability"]
+            },
+            "historical": {
+                "win_rate": sim_result.get("historical_success_rate", 0),
+                "avg_goal": sim_result.get("average_goal", 0),
+                "avg_duration": sim_result.get("average_duration", 0),
+                "sample_size": sim_result.get("similar_projects_found", 0)
+            }
         }
     except Exception as e:
         logger.error(f"API Error processing /predict: {e}")
@@ -290,4 +310,10 @@ def optimize_endpoint(payload: ProjectInput):
     except Exception as e:
         logger.error(f"API Error processing /optimize: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+if __name__ == "__main__":
+    import uvicorn
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("src.api.app:app", host="0.0.0.0", port=port)
 

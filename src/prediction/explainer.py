@@ -4,14 +4,10 @@ import logging
 import joblib
 import numpy as np
 
-# Setup paths
-SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(SRC_DIR)
-
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-from prediction.predictor import build_feature_vector, EXPECTED_FEATURES, _load_model
+from .predictor import build_feature_vector, EXPECTED_FEATURES, _load_model
 import shap
 
 # Cache explainer
@@ -48,8 +44,17 @@ def explain_prediction(project_inputs: dict) -> dict:
     for i, feature_name in enumerate(EXPECTED_FEATURES):
         contributions[feature_name] = float(shap_vals[i])
         
+    try:
+        if isinstance(explainer.expected_value, (np.ndarray, list)):
+            br = float(explainer.expected_value[0])
+        else:
+            br = float(explainer.expected_value)
+    except Exception:
+        br = 0.0
+        
     return {
         "success_probability": round(success_probability, 4),
+        "base_rate": br,
         "feature_contributions": contributions
     }
 

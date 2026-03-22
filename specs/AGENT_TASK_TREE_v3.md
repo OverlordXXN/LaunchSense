@@ -324,3 +324,34 @@ PHASE 30 — FIX MODEL PATH + API/STANDALONE FALLBACK [COMPLETED]
 [X] TASK-151 enforce API as strict primary with request-scoped fallback
 [X] TASK-152 fix UI indicator to reflect dynamic execution mode
 [X] TASK-153 ensure models/latest.joblib is globally un-ignored
+
+--------------------------------------------------
+PHASE 31 — RESTORE API-FIRST INFERENCE ARCHITECTURE [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-154 remove standalone inference execution from Streamlit UI entirely
+[X] TASK-155 strip fallback predicting logic cascading directly into strict offline API error bounds
+[X] TASK-156 fix API model path dynamically in src.api mapping ROOT directly
+[X] TASK-157 expose unified payload containing shap, outcomes, and identical project similarities natively overlapping /predict
+[X] TASK-158 force Streamlit layers dynamically loading explanations natively from root JSON scopes exclusively
+[X] TASK-159 constrain UI badge modes targeting Connected/Offline streams eliminating subset representations
+
+--------------------------------------------------
+PHASE 32 — PRODUCTION HARDENING & FULL SYSTEM AUDIT [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-171 Remove Legacy Hybrid Artifacts from Streamlit codebase
+[X] TASK-172 Validate API Contract explicitly exposing exact unified schemas 
+[X] TASK-173 Merge /predict into singular exact integrated structure containing `optimization`, `historical`, `shap_values`, `base_rate`
+[X] TASK-174 Remove Multi-call UI Logic evaluating strictly `POST /predict` purely
+[X] TASK-175 Enforce UI State Consistency (`API Connected` vs `API Offline`) avoiding standalone terminology
+[X] TASK-176 Strip UI Categorical mappings enforcing strict `/categories` JSON drops disabling predictions dynamically upon failures
+[X] TASK-177 Enforce Backend Model Evaluation tracking roots statically evaluating `parents[2]` purely
+[X] TASK-178 Ensure SHAP bindings map explicit dimensionality rendering explicit `base_rate`
+[X] TASK-179 Bind historical derivations precisely beneath nested predict responses
+[X] TASK-180 Consolidate Goal approximations deeply nesting Optimization metrics directly avoiding duplicate execution steps
+[X] TASK-181 Clean Streamlit production boundaries terminating loose assertions or print warnings
+[X] TASK-182 Validate Render Environment targeting $PORT and explicitly evaluating uvicorn bindings
+[X] TASK-183 Evaluate Streamlit URL targets evaluating `LAUNCHSENSE_API` defaults
+[X] TASK-184 End-to-End Validate Predictions, Optimization, historical metrics, and waterfall parameters rendering synchronously.
+[X] TASK-185 Record Architectural State into finalized structural dependencies

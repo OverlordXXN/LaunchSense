@@ -27,81 +27,6 @@ API_BASE = os.getenv(
 
 if "last_execution_mode" not in st.session_state:
     st.session_state.last_execution_mode = "API"
-
-_MODEL = None
-import joblib
-
-def get_model():
-    global _MODEL
-    if _MODEL is None:
-        _MODEL = joblib.load(MODEL_PATH)
-    return _MODEL
-
-FULL_CATEGORIES = {
-    "Technology": ["Hardware", "Web", "Software", "Apps", "Gadgets", "Robots", "DIY Electronics"],
-    "Games": ["Tabletop Games", "Video Games", "Playing Cards", "Puzzles", "Mobile Games", "Live Games"],
-    "Art": ["Painting", "Digital Art", "Illustration", "Public Art", "Sculpture", "Mixed Media", "Conceptual Art", "Ceramics", "Textiles", "Installations", "Video Art"],
-    "Design": ["Product Design", "Graphic Design", "Architecture", "Interactive Design", "Typography", "Civic Design"],
-    "Film & Video": ["Documentary", "Shorts", "Animation", "Webseries", "Narrative Film", "Music Videos", "Action", "Comedy", "Drama", "Family", "Fantasy", "Horror", "Romance", "Science Fiction", "Thrillers"],
-    "Publishing": ["Fiction", "Nonfiction", "Art Books", "Children's Books", "Periodical", "Poetry", "Radio & Podcasts", "Zines", "Academic", "Anthologies", "Calendars", "Comedy", "Letterpress", "Literary Journals", "Translations", "Young Adult"],
-    "Music": ["Indie Rock", "Pop", "Rock", "Jazz", "Electronic", "Classical Music", "Hip-Hop", "Punk", "Country & Folk", "World Music", "Metal", "R&B", "Blues", "Chiptune", "Faith", "Kids", "Latin"],
-    "Food": ["Restaurants", "Food Trucks", "Drinks", "Small Batch", "Farms", "Vegan", "Events", "Community Gardens", "Spaces", "Bacon", "Cookbooks", "Farmer's Markets"],
-    "Fashion": ["Apparel", "Accessories", "Footwear", "Jewelry", "Ready-to-wear", "Childrenswear", "Couture", "Pet Fashion"],
-    "Comics": ["Comic Books", "Graphic Novels", "Webcomics", "Anthologies", "Events"],
-    "Photography": ["Photobooks", "Fine Art", "People", "Places", "Nature", "Animals"],
-    "Theater": ["Plays", "Musicals", "Festivals", "Experimental", "Immersive", "Spaces", "Comedy"],
-    "Dance": ["Performances", "Workshops", "Residencies", "Spaces"],
-    "Crafts": ["Woodworking", "DIY", "Crafts", "Candles", "Crochet", "Embroidery", "Glass", "Knitting", "Macrame", "Pottery", "Printing", "Quilts", "Stationery", "Taxidermy", "Weaving"]
-}
-
-@st.cache_data(ttl=3600)
-def _fetch_categories_offline():
-    try:
-        df = pd.read_csv("data/processed/full_dataset.csv")
-        mapping = {}
-        for cat, subcat in zip(df['category'], df['subcategory']):
-            cat_norm = str(cat).strip().title()
-            subcat_norm = str(subcat).strip().title()
-            if cat_norm not in mapping:
-                mapping[cat_norm] = set()
-            mapping[cat_norm].add(subcat_norm)
-        return {"source": "dataset", "mapping": {k: sorted(list(v)) for k, v in mapping.items()}}
-    except Exception:
-        return {"source": "fallback", "mapping": FULL_CATEGORIES}
-
-@st.cache_data(ttl=3600)
-def _get_offline_features():
-    try:
-        df = pd.read_csv("data/processed/full_dataset.csv")
-        cat_success = df.groupby('category')['category_success_rate'].first().to_dict() if 'category_success_rate' in df.columns else {}
-        subcat_success = df.groupby('subcategory')['subcategory_success_rate'].first().to_dict() if 'subcategory_success_rate' in df.columns else {}
-        median_goal = df['goal'].median()
-        projects_df = df[['category', 'subcategory', 'goal', 'campaign_duration', 'is_successful']].copy()
-        return cat_success, subcat_success, median_goal, projects_df
-    except Exception:
-        return {}, {}, 5000.0, pd.DataFrame(columns=['category', 'subcategory', 'goal', 'campaign_duration', 'is_successful'])
-
-def _map_payload_offline(payload):
-    cat_success, subcat_success, median_goal, _ = _get_offline_features()
-    cat = payload["category"]
-    subcat = payload["subcategory"]
-    goal = payload["goal"]
-    
-    cat_succ = cat_success.get(cat, 0.35)
-    subcat_succ = subcat_success.get(subcat, cat_succ)
-    realism = float(min(max(0.01, median_goal / (goal + 1)), 0.99))
-    
-    return {
-        'goal': goal,
-        'goal_realism_score': realism,
-        'category_success_rate': cat_succ,
-        'subcategory_success_rate': subcat_succ,
-        'competition_density': 10,
-        'launch_month': payload["launch_month"],
-        'launch_day_of_week': payload["launch_day_of_week"],
-        'campaign_duration': payload["campaign_duration"]
-    }
-
 @st.cache_data(ttl=3600)
 def _fetch_categories_api():
     import time
@@ -117,18 +42,17 @@ def _fetch_categories_api():
             raise e
 
 def fetch_categories_map():
-    """Fetches the dataset-derived category/subcategory structure from either backend API or offline fallback."""
+    """Fetches the dataset-derived category/subcategory structure from backend API."""
     try:
         data = _fetch_categories_api()
-        st.session_state.last_execution_mode = "API"
+        st.session_state.api_online = True
     except Exception as e:
-        data = _fetch_categories_offline()
-        st.session_state.last_execution_mode = "Standalone"
+        st.session_state.api_online = False
+        data = {"mapping": {}}
             
-    mapping = data.get("mapping", data)
-    source = data.get("source", "unknown")
-    if source == "fallback":
-        st.warning("⚠️ Could not load dynamic categories from the backend dataset. Using limited fallback options.")
+    mapping = data.get("mapping", {})
+    if not mapping:
+        st.warning("⚠️ Could not load dynamic categories from the backend dataset. Predictions offline.")
     return mapping
 
 categories_map = fetch_categories_map()
@@ -139,10 +63,10 @@ col1, col2 = st.columns([4, 1])
 with col1:
     st.markdown("[View Source on GitHub](https://github.com/OverlordXXN/LaunchSense)")
 with col2:
-    if st.session_state.get("last_execution_mode", "API") == "Standalone":
-        st.info("🟢 Cloud Mode (Standalone)")
+    if st.session_state.get("api_online", False):
+        st.caption("🟢 API Connected")
     else:
-        st.caption("🔵 API Mode")
+        st.error("🔴 API Offline")
 
 st.markdown("Enter your project parameters below to get success predictions and goal optimization.")
 
@@ -171,7 +95,10 @@ with main_col1:
         campaign_duration = st.slider("Duration (days)", min_value=7, max_value=60, value=30)
         
     st.write("") # Spacer
-    submit_button = st.button("Predict Success", type="primary", use_container_width=True, disabled=not (category and subcategory))
+    api_online = st.session_state.get("api_online", False)
+    submit_button = st.button("Predict Success", type="primary", use_container_width=True, disabled=not (category and subcategory and api_online))
+    if not api_online:
+        st.error("🔴 Prediction is strictly disabled while API is Offline.")
 
 with main_col2:
     if submit_button:
@@ -193,38 +120,14 @@ with main_col2:
                     predict_resp = requests.post(f"{API_BASE}/predict", json=payload, timeout=10)
                     predict_resp.raise_for_status()
                     predict_data = predict_resp.json()
-                    used_standalone = False
-                except requests.exceptions.RequestException:
-                    used_standalone = True
-                        
-                if used_standalone:
-                    st.caption("Running in Cloud Standalone Mode")
-                    try:
-                        mdl = get_model()
-                        mapped_payload = _map_payload_offline(payload)
-                        features = [[
-                            mapped_payload['goal'], mapped_payload['goal_realism_score'],
-                            mapped_payload['category_success_rate'], mapped_payload['subcategory_success_rate'],
-                            mapped_payload['competition_density'], mapped_payload['launch_month'],
-                            mapped_payload['launch_day_of_week'], mapped_payload['campaign_duration']
-                        ]]
-                        prob = float(mdl.predict_proba(features)[0][1])
-                        pred_class = "Successful" if mdl.predict(features)[0] == 1 else "Failed"
-                        
-                        predict_data = {
-                            "success_probability": prob,
-                            "predicted_class": pred_class,
-                            "confidence_level": "High" if prob > 0.7 else "Medium" if prob >= 0.5 else "Low",
-                            "warning_flags": [],
-                            "feature_contributions": {}
-                        }
-                    except Exception as e:
-                        st.error(f"Standalone mode evaluation failed natively: {e}")
-                        predict_data = {}
-                
-                prob = predict_data.get("success_probability", 0) * 100
-                pred_class = predict_data.get("predicted_class", "Unknown")
-                confidence = predict_data.get("confidence_level", "Unknown")
+                    st.session_state.api_online = True
+                except requests.exceptions.RequestException as e:
+                    st.session_state.api_online = False
+                    st.error(f"🔴 Prediction Backend Offline: Unable to fulfill request. ({e})")
+                    st.stop()
+                prob = predict_data.get("probability", 0) * 100
+                pred_class = predict_data.get("outcome", "Unknown")
+                confidence = predict_data.get("confidence", "Unknown")
                 warnings = predict_data.get("warning_flags", [])
                 
                 # Surface dangerous API bounds
@@ -252,61 +155,16 @@ with main_col2:
 
             # LAYER 2: Goal Optimization
             st.header("Optimization")
-            with st.spinner("Optimizing funding goal..."):
-                try:
-                    optimize_resp = requests.post(f"{API_BASE}/optimize", json=payload, timeout=10)
-                    optimize_resp.raise_for_status()
-                    opt_data = optimize_resp.json()
-                    used_standalone_opt = False
-                except requests.exceptions.RequestException:
-                    used_standalone_opt = True
-                        
-                if used_standalone_opt:
-                    mapped_payload = _map_payload_offline(payload)
-                    try:
-                        mdl = get_model()
-                        current_prob = predict_data.get("success_probability", 0)
-                        best_prob = current_prob
-                        best_goal = mapped_payload['goal']
-                        
-                        for step in [0.9, 0.8, 0.6, 0.5]:
-                            g = mapped_payload['goal'] * step
-                            realism = float(min(max(0.01, 5000.0 / (g + 1)), 0.99))
-                            f = [[g, realism, mapped_payload['category_success_rate'], mapped_payload['subcategory_success_rate'], 10, mapped_payload['launch_month'], mapped_payload['launch_day_of_week'], mapped_payload['campaign_duration']]]
-                            p = float(mdl.predict_proba(f)[0][1])
-                            if p > best_prob:
-                                best_prob = p
-                                best_goal = g
-                                
-                        original_prob = current_prob
-                        opt_data = {
-                            "recommended_goal": best_goal,
-                            "expected_success_probability": best_prob,
-                            "improvement_over_original": best_prob - original_prob,
-                            "goal_analysis": []
-                        }
-                    except Exception:
-                        opt_data = {}
-                
-                rec_goal = opt_data.get("recommended_goal", 0)
-                exp_prob = opt_data.get("expected_success_probability", 0) * 100
-                improve = opt_data.get("improvement_over_original", 0) * 100
-                
-                ocol1, ocol2, ocol3 = st.columns(3)
-                ocol1.metric("Recommended Goal", f"${rec_goal:,.0f}")
-                ocol2.metric("Expected Probability", f"{exp_prob:.2f}%")
-                ocol3.metric("Improvement Potential", f"+{improve:.2f}%" if improve > 0 else f"{improve:.2f}%")
-                
-                goal_analysis = opt_data.get("goal_analysis", [])
-                if goal_analysis:
-                    with st.expander("View Probability Curve"):
-                        df_goals = pd.DataFrame(goal_analysis)
-                        df_goals["goal"] = pd.to_numeric(df_goals["goal"])
-                        df_goals["probability"] = pd.to_numeric(df_goals["probability"]) * 100
-                        df_goals = df_goals.set_index("goal")
-                        
-                        st.line_chart(df_goals["probability"])
-                        st.caption("How likelihood of success drops as your requested funding goal increases.")
+            opt_data = predict_data.get("optimization", {})
+            
+            rec_goal = opt_data.get("recommended_goal", 0)
+            exp_prob = opt_data.get("expected_probability", 0) * 100
+            improve = opt_data.get("improvement", 0) * 100
+            
+            ocol1, ocol2, ocol3 = st.columns(3)
+            ocol1.metric("Recommended Goal", f"${rec_goal:,.0f}")
+            ocol2.metric("Expected Probability", f"{exp_prob:.2f}%")
+            ocol3.metric("Improvement Potential", f"+{improve:.2f}%" if improve > 0 else f"{improve:.2f}%")
                 
             st.divider()
             
@@ -314,8 +172,12 @@ with main_col2:
             st.header("Why this prediction?")
             st.write("Understand how individual parameters positively or negatively swung the AI's final decision over the category's base rate.")
             
-            contributions = predict_data.get("feature_contributions", {})
-            if contributions:
+            shap_vals = predict_data.get("shap_values", [])
+            feat_names = predict_data.get("feature_names", [])
+            
+            if shap_vals and feat_names:
+                contributions = dict(zip(feat_names, shap_vals))
+                base_prob = predict_data.get("base_rate", 0.0)
                 import math
                 import matplotlib.pyplot as plt
                 
@@ -383,42 +245,32 @@ with main_col2:
             # LAYER 4: Similar Projects Context
             st.header("Historical Context")
             st.write("Compare your idea against identical real-world campaigns from our dataset.")
-            with st.spinner("Finding similar historical projects..."):
-                try:
-                    sim_resp = requests.post(f"{API_BASE}/similar-projects", json=payload, timeout=5)
-                    sim_resp.raise_for_status()
-                    sim_data = sim_resp.json()
-                    used_standalone_sim = False
-                except requests.exceptions.RequestException:
-                    used_standalone_sim = True
-                        
-                if used_standalone_sim:
-                    sim_data = {} # Disabled temporarily natively without src import dependencies
+            sim_data = predict_data.get("historical", {})
+            
+            count = sim_data.get("sample_size", 0)
+            if count > 0:
+                conf = predict_data.get("confidence", "Unknown")
+                success_rate = sim_data.get("win_rate", 0) * 100
+                avg_goal = sim_data.get("avg_goal", 0)
+                avg_duration = sim_data.get("avg_duration", 0)
                 
-                count = sim_data.get("similar_projects_found", 0)
-                if count > 0:
-                    conf = sim_data.get("confidence", "Unknown")
-                    success_rate = sim_data.get("historical_success_rate", 0) * 100
-                    avg_goal = sim_data.get("average_goal", 0)
-                    avg_duration = sim_data.get("average_duration", 0)
-                    
-                    st.markdown(f"**{count:,}** mathematically similar historical projects found (`{conf}` confidence).")
-                    
-                    scol1, scol2, scol3 = st.columns(3)
-                    scol1.metric("Historical Win Rate", f"{success_rate:.1f}%")
-                    scol2.metric("Avg Competitor Goal", f"${avg_goal:,.0f}")
-                    scol3.metric("Avg Duration", f"{avg_duration:.0f} days")
-                    
-                    if conf == "Low" or avg_goal <= 0:
-                        st.caption("ℹ️ Historical data is sparse or low confidence for this specific setup. Use these averages purely as rough estimates.")
-                    elif rec_goal > (avg_goal * 1.10):
-                        st.caption("⚠️ Your recommended goal is higher than similar projects. This suggests your project may require stronger positioning or differentiation to succeed at this level.")
-                    elif rec_goal < (avg_goal * 0.90):
-                        st.caption("✅ Reducing your goal aligns with historical trends and improves your chances of success.")
-                    else:
-                        st.caption("✅ Your goal is well aligned with historical successful campaigns.")
+                st.markdown(f"**{count:,}** mathematically similar historical projects found (`{conf}` confidence).")
+                
+                scol1, scol2, scol3 = st.columns(3)
+                scol1.metric("Historical Win Rate", f"{success_rate:.1f}%")
+                scol2.metric("Avg Competitor Goal", f"${avg_goal:,.0f}")
+                scol3.metric("Avg Duration", f"{avg_duration:.0f} days")
+                
+                if conf == "Low" or avg_goal <= 0:
+                    st.caption("ℹ️ Historical data is sparse or low confidence for this specific setup. Use these averages purely as rough estimates.")
+                elif rec_goal > (avg_goal * 1.10):
+                    st.caption("⚠️ Your recommended goal is higher than similar projects. This suggests your project may require stronger positioning or differentiation to succeed at this level.")
+                elif rec_goal < (avg_goal * 0.90):
+                    st.caption("✅ Reducing your goal aligns with historical trends and improves your chances of success.")
                 else:
-                    st.warning("No substantially similar historical projects were found in the dataset.")
+                    st.caption("✅ Your goal is well aligned with historical successful campaigns.")
+            else:
+                st.warning("No substantially similar historical projects were found in the dataset.")
                     
             # LAYER 5: Scenario Comparison
             st.divider()
@@ -441,28 +293,12 @@ with main_col2:
                                 c_resp = requests.post(f"{API_BASE}/predict?include_contributions=false", json=cg_payload, timeout=5)
                                 c_resp.raise_for_status()
                                 c_data = c_resp.json()
-                                used_standalone_comp = False
                             except requests.exceptions.RequestException:
-                                used_standalone_comp = True
-                                    
-                            if used_standalone_comp:
-                                try:
-                                    mdl = get_model()
-                                    mapped_cg = _map_payload_offline(cg_payload)
-                                    features = [[
-                                        mapped_cg['goal'], mapped_cg['goal_realism_score'],
-                                        mapped_cg['category_success_rate'], mapped_cg['subcategory_success_rate'],
-                                        mapped_cg['competition_density'], mapped_cg['launch_month'],
-                                        mapped_cg['launch_day_of_week'], mapped_cg['campaign_duration']
-                                    ]]
-                                    prob = float(mdl.predict_proba(features)[0][1])
-                                    c_data = {"success_probability": prob}
-                                except Exception:
-                                    c_data = {}
+                                c_data = {}
                                 
                             comp_results.append({
                                 "Goal": cg,
-                                "Probability": c_data.get("success_probability", 0) * 100
+                                "Probability": c_data.get("probability", 0) * 100
                             })
                                 
                     if comp_results:

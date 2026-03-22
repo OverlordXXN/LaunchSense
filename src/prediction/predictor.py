@@ -5,10 +5,7 @@ import joblib
 import pandas as pd
 import numpy as np
 
-# Setup paths
-SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ROOT_DIR = os.path.dirname(SRC_DIR)
-sys.path.append(SRC_DIR)
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -101,9 +98,10 @@ def predict_success_probability(project_inputs: dict, include_contributions: boo
     }
     
     if include_contributions:
-        from prediction.explainer import explain_prediction
+        from .explainer import explain_prediction
         explanation = explain_prediction(project_inputs)
         output["feature_contributions"] = explanation["feature_contributions"]
+        output["base_rate"] = explanation.get("base_rate", 0.0)
         
     return output
 
