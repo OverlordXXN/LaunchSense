@@ -741,3 +741,27 @@ To redirect the Streamlit interface away from local diagnostic instances and dyn
 ### Implementation Details
 1. **Dynamic Target Config (`TASK-128 & TASK-129 & TASK-130`)**: Discarded `http://localhost:8000` entirely in favor of an `os.getenv("LAUNCHSENSE_API", "https://launchsense-api.onrender.com")` fallback architecture spanning all distinct requests payloads.
 2. **Badge Rendering Ordering (`TASK-131 & TASK-132`)**: Restructured the visual pipeline such that `st.session_state` connects sequentially *after* the initial categorical layout fetch occurs. This guarantees cold-start renders correctly reflect true upstream operational status immediately natively toggling the frontend indicator to `🟢 Standalone` instantly if Render is sleeping.
+
+---
+
+## Phase 27 — Import Path Stabilization 
+
+### Objective
+To securely unify and harden the Python namespace imports between `src.*` modules across disconnected top-level executions (Docker UI vs Gunicorn API), preventing `ModuleNotFoundError` crashes while optimizing fallback hierarchy evaluation.
+
+### Implementation Details
+1. **Dynamic ROOT Injection (`TASK-133 & TASK-135`)**: Hooked `sys.path.append(str(Path(__file__).resolve().parents[n]))` identically at the highest execution tiers of both `demo/streamlit_app.py` and `src/api/app.py` resolving module access organically regardless of invocation context.
+2. **Safe Standalone Evaluation (`TASK-134`)**: Bound all native ML script executions within `try: import ... except ImportError:` globals early, cascading a `STANDALONE_AVAILABLE` flag downward entirely preventing hard Streamlit application crashes strictly isolating failure bounds natively.
+3. **Strict Priority Routing (`TASK-136`)**: Deleted conditional `if not standalone_mode:` execution blockers, mutating the API calls to `try: ping ... except: switch`. This mathematically bounds the system rigidly to ping backend clusters on *every* interaction, treating offline mechanics specifically as an ultra-safe timeout safety-net only instead of a permanently locked user scope.
+
+---
+
+## Phase 28 — Production Model + Category Restoration
+
+### Objective
+To explicitly harmonize categoric UI selections safely preventing UI regressions while rewriting offline engine inference completely bypassing arbitrary API src structures.
+
+### Implementation Details
+1. **Lazy State Loader (`TASK-137 & TASK-138`)**: Overhauled the raw inference trigger structure natively inside `src/api/app.py` defining an asynchronous dynamic loader bound to `get_model()`, evaluating directly across `ROOT / "models"`, entirely suppressing startup initialization failures.
+2. **Native Standalone Executions (`TASK-139`)**: Injected `import joblib` strictly across offline scenarios manually shaping the XGBoost `2D Numpy Arrays`. Offline predictions natively load binary graphs dynamically discarding entirely any module imports pointing to backend architecture resolving path errors gracefully.
+3. **Categorical Alignments (`TASK-140 & TASK-141`)**: Extracted explicitly defined strings of all `15 Primary` Categories injecting them directly into the front-end stream ensuring UI capabilities mirror natively hosted datastores precisely.

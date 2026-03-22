@@ -9,8 +9,21 @@ import pandas as pd
 import re
 
 # Setup paths
-SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(SRC_DIR)
+import joblib
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT))
+SRC_DIR = str(ROOT / "src")
+
+MODEL_PATH = ROOT / "models" / "latest.joblib"
+model = None
+
+def get_model():
+    global model
+    if model is None:
+        model = joblib.load(MODEL_PATH)
+    return model
 
 from api.schemas import ProjectInput
 from prediction.predictor import predict_success_probability
@@ -226,6 +239,9 @@ def predict_endpoint(payload: ProjectInput, include_contributions: bool = True):
     try:
         # Pre-process raw inputs
         model_inputs = _map_to_model_features(payload)
+        
+        # Ensure model is strictly loaded in memory via lazy evaluation (TASK-138)
+        _ = get_model()
         
         # 1. Central inference request
         pred_result = predict_success_probability(model_inputs, include_contributions=include_contributions)

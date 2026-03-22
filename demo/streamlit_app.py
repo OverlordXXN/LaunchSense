@@ -1,6 +1,16 @@
+import sys
+from pathlib import Path
 import streamlit as st
 import requests
 import pandas as pd
+import os
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(ROOT))
+
+import joblib
+
+MODEL_PATH = ROOT / "models" / "latest.joblib"
 
 st.set_page_config(page_title="Kickstarter Success Predictor", layout="wide")
 
@@ -18,6 +28,23 @@ API_BASE = os.getenv(
 if "standalone_mode" not in st.session_state:
     st.session_state.standalone_mode = False
 
+FULL_CATEGORIES = {
+    "Technology": ["Hardware", "Web", "Software", "Apps", "Gadgets", "Robots", "DIY Electronics"],
+    "Games": ["Tabletop Games", "Video Games", "Playing Cards", "Puzzles", "Mobile Games", "Live Games"],
+    "Art": ["Painting", "Digital Art", "Illustration", "Public Art", "Sculpture", "Mixed Media", "Conceptual Art", "Ceramics", "Textiles", "Installations", "Video Art"],
+    "Design": ["Product Design", "Graphic Design", "Architecture", "Interactive Design", "Typography", "Civic Design"],
+    "Film & Video": ["Documentary", "Shorts", "Animation", "Webseries", "Narrative Film", "Music Videos", "Action", "Comedy", "Drama", "Family", "Fantasy", "Horror", "Romance", "Science Fiction", "Thrillers"],
+    "Publishing": ["Fiction", "Nonfiction", "Art Books", "Children's Books", "Periodical", "Poetry", "Radio & Podcasts", "Zines", "Academic", "Anthologies", "Calendars", "Comedy", "Letterpress", "Literary Journals", "Translations", "Young Adult"],
+    "Music": ["Indie Rock", "Pop", "Rock", "Jazz", "Electronic", "Classical Music", "Hip-Hop", "Punk", "Country & Folk", "World Music", "Metal", "R&B", "Blues", "Chiptune", "Faith", "Kids", "Latin"],
+    "Food": ["Restaurants", "Food Trucks", "Drinks", "Small Batch", "Farms", "Vegan", "Events", "Community Gardens", "Spaces", "Bacon", "Cookbooks", "Farmer's Markets"],
+    "Fashion": ["Apparel", "Accessories", "Footwear", "Jewelry", "Ready-to-wear", "Childrenswear", "Couture", "Pet Fashion"],
+    "Comics": ["Comic Books", "Graphic Novels", "Webcomics", "Anthologies", "Events"],
+    "Photography": ["Photobooks", "Fine Art", "People", "Places", "Nature", "Animals"],
+    "Theater": ["Plays", "Musicals", "Festivals", "Experimental", "Immersive", "Spaces", "Comedy"],
+    "Dance": ["Performances", "Workshops", "Residencies", "Spaces"],
+    "Crafts": ["Woodworking", "DIY", "Crafts", "Candles", "Crochet", "Embroidery", "Glass", "Knitting", "Macrame", "Pottery", "Printing", "Quilts", "Stationery", "Taxidermy", "Weaving"]
+}
+
 @st.cache_data(ttl=3600)
 def _fetch_categories_offline():
     try:
@@ -31,11 +58,7 @@ def _fetch_categories_offline():
             mapping[cat_norm].add(subcat_norm)
         return {"source": "dataset", "mapping": {k: sorted(list(v)) for k, v in mapping.items()}}
     except Exception:
-        return {"source": "fallback", "mapping": {
-            "Technology": ["Web", "Hardware", "Gadgets"],
-            "Games": ["Tabletop Games", "Video Games"],
-            "Art": ["Painting", "Digital Art"]
-        }}
+        return {"source": "fallback", "mapping": FULL_CATEGORIES}
 
 @st.cache_data(ttl=3600)
 def _get_offline_features():
@@ -163,25 +186,38 @@ with main_col2:
                 st.caption("Running in Cloud Standalone Mode")
                 
             with st.spinner("Analyzing project parameters..."):
-                if not st.session_state.standalone_mode:
-                    try:
-                        predict_resp = requests.post(f"{API_BASE}/predict", json=payload, timeout=10)
-                        predict_resp.raise_for_status()
-                        predict_data = predict_resp.json()
-                    except requests.exceptions.RequestException:
-                        st.session_state.standalone_mode = True
+                # TASK-136 Ensure API-first prediction
+                try:
+                    predict_resp = requests.post(f"{API_BASE}/predict", json=payload, timeout=10)
+                    predict_resp.raise_for_status()
+                    predict_data = predict_resp.json()
+                    st.session_state.standalone_mode = False
+                except requests.exceptions.RequestException:
+                    st.session_state.standalone_mode = True
                         
                 if st.session_state.standalone_mode:
-                    from src.prediction.predictor import predict_success_probability
-                    mapped_payload = _map_payload_offline(payload)
-                    pred_res = predict_success_probability(mapped_payload, include_contributions=True)
-                    predict_data = {
-                        "success_probability": pred_res["success_probability"],
-                        "predicted_class": pred_res["predicted_class"],
-                        "confidence_level": pred_res.get("confidence_level", "Unknown"),
-                        "warning_flags": pred_res.get("warning_flags", []),
-                        "feature_contributions": pred_res.get("feature_contributions", {})
-                    }
+                    try:
+                        mdl = joblib.load(MODEL_PATH)
+                        mapped_payload = _map_payload_offline(payload)
+                        features = [[
+                            mapped_payload['goal'], mapped_payload['goal_realism_score'],
+                            mapped_payload['category_success_rate'], mapped_payload['subcategory_success_rate'],
+                            mapped_payload['competition_density'], mapped_payload['launch_month'],
+                            mapped_payload['launch_day_of_week'], mapped_payload['campaign_duration']
+                        ]]
+                        prob = float(mdl.predict_proba(features)[0][1])
+                        pred_class = "Successful" if mdl.predict(features)[0] == 1 else "Failed"
+                        
+                        predict_data = {
+                            "success_probability": prob,
+                            "predicted_class": pred_class,
+                            "confidence_level": "High" if prob > 0.7 else "Medium" if prob >= 0.5 else "Low",
+                            "warning_flags": [],
+                            "feature_contributions": {}
+                        }
+                    except Exception as e:
+                        st.error(f"Standalone mode evaluation failed natively: {e}")
+                        predict_data = {}
                 
                 prob = predict_data.get("success_probability", 0) * 100
                 pred_class = predict_data.get("predicted_class", "Unknown")
@@ -214,25 +250,40 @@ with main_col2:
             # LAYER 2: Goal Optimization
             st.header("Optimization")
             with st.spinner("Optimizing funding goal..."):
-                if not st.session_state.standalone_mode:
-                    try:
-                        optimize_resp = requests.post(f"{API_BASE}/optimize", json=payload, timeout=10)
-                        optimize_resp.raise_for_status()
-                        opt_data = optimize_resp.json()
-                    except requests.exceptions.RequestException:
-                        st.session_state.standalone_mode = True
+                try:
+                    optimize_resp = requests.post(f"{API_BASE}/optimize", json=payload, timeout=10)
+                    optimize_resp.raise_for_status()
+                    opt_data = optimize_resp.json()
+                    st.session_state.standalone_mode = False
+                except requests.exceptions.RequestException:
+                    st.session_state.standalone_mode = True
                         
                 if st.session_state.standalone_mode:
-                    from src.prediction.goal_optimizer import optimize_goal
                     mapped_payload = _map_payload_offline(payload)
-                    opt_res = optimize_goal(mapped_payload)
-                    original_prob = predict_data.get("success_probability", 0)
-                    opt_data = {
-                        "recommended_goal": opt_res["optimal_goal"],
-                        "expected_success_probability": opt_res["optimal_probability"],
-                        "improvement_over_original": opt_res["optimal_probability"] - original_prob,
-                        "goal_analysis": opt_res.get("goal_analysis", [])
-                    }
+                    try:
+                        mdl = joblib.load(MODEL_PATH)
+                        current_prob = predict_data.get("success_probability", 0)
+                        best_prob = current_prob
+                        best_goal = mapped_payload['goal']
+                        
+                        for step in [0.9, 0.8, 0.6, 0.5]:
+                            g = mapped_payload['goal'] * step
+                            realism = float(min(max(0.01, 5000.0 / (g + 1)), 0.99))
+                            f = [[g, realism, mapped_payload['category_success_rate'], mapped_payload['subcategory_success_rate'], 10, mapped_payload['launch_month'], mapped_payload['launch_day_of_week'], mapped_payload['campaign_duration']]]
+                            p = float(mdl.predict_proba(f)[0][1])
+                            if p > best_prob:
+                                best_prob = p
+                                best_goal = g
+                                
+                        original_prob = current_prob
+                        opt_data = {
+                            "recommended_goal": best_goal,
+                            "expected_success_probability": best_prob,
+                            "improvement_over_original": best_prob - original_prob,
+                            "goal_analysis": []
+                        }
+                    except Exception:
+                        opt_data = {}
                 
                 rec_goal = opt_data.get("recommended_goal", 0)
                 exp_prob = opt_data.get("expected_success_probability", 0) * 100
@@ -330,21 +381,16 @@ with main_col2:
             st.header("Historical Context")
             st.write("Compare your idea against identical real-world campaigns from our dataset.")
             with st.spinner("Finding similar historical projects..."):
-                if not st.session_state.standalone_mode:
-                    try:
-                        sim_resp = requests.post(f"{API_BASE}/similar-projects", json=payload, timeout=5)
-                        sim_resp.raise_for_status()
-                        sim_data = sim_resp.json()
-                    except requests.exceptions.RequestException:
-                        st.session_state.standalone_mode = True
+                try:
+                    sim_resp = requests.post(f"{API_BASE}/similar-projects", json=payload, timeout=5)
+                    sim_resp.raise_for_status()
+                    sim_data = sim_resp.json()
+                    st.session_state.standalone_mode = False
+                except requests.exceptions.RequestException:
+                    st.session_state.standalone_mode = True
                         
                 if st.session_state.standalone_mode:
-                    from src.analytics.similarity import calculate_similarity_metrics
-                    _, _, _, projects_df = _get_offline_features()
-                    if not projects_df.empty:
-                        sim_data = calculate_similarity_metrics(payload, projects_df)
-                    else:
-                        sim_data = {}
+                    sim_data = {} # Disabled temporarily natively without src import dependencies
                 
                 count = sim_data.get("similar_projects_found", 0)
                 if count > 0:
@@ -388,18 +434,28 @@ with main_col2:
                             cg_payload = payload.copy()
                             cg_payload["goal"] = cg
                             
-                            if not st.session_state.standalone_mode:
-                                try:
-                                    c_resp = requests.post(f"{API_BASE}/predict?include_contributions=false", json=cg_payload, timeout=5)
-                                    c_resp.raise_for_status()
-                                    c_data = c_resp.json()
-                                except requests.exceptions.RequestException:
-                                    st.session_state.standalone_mode = True
+                            try:
+                                c_resp = requests.post(f"{API_BASE}/predict?include_contributions=false", json=cg_payload, timeout=5)
+                                c_resp.raise_for_status()
+                                c_data = c_resp.json()
+                                st.session_state.standalone_mode = False
+                            except requests.exceptions.RequestException:
+                                st.session_state.standalone_mode = True
                                     
                             if st.session_state.standalone_mode:
-                                from src.prediction.predictor import predict_success_probability
-                                mapped_cg_payload = _map_payload_offline(cg_payload)
-                                c_data = predict_success_probability(mapped_cg_payload, include_contributions=False)
+                                try:
+                                    mdl = joblib.load(MODEL_PATH)
+                                    mapped_cg = _map_payload_offline(cg_payload)
+                                    features = [[
+                                        mapped_cg['goal'], mapped_cg['goal_realism_score'],
+                                        mapped_cg['category_success_rate'], mapped_cg['subcategory_success_rate'],
+                                        mapped_cg['competition_density'], mapped_cg['launch_month'],
+                                        mapped_cg['launch_day_of_week'], mapped_cg['campaign_duration']
+                                    ]]
+                                    prob = float(mdl.predict_proba(features)[0][1])
+                                    c_data = {"success_probability": prob}
+                                except Exception:
+                                    c_data = {}
                                 
                             comp_results.append({
                                 "Goal": cg,

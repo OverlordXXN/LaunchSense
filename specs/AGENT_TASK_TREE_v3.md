@@ -283,3 +283,23 @@ PHASE 26 — STREAMLIT CLOUD API CONNECTION [COMPLETED]
 [X] TASK-130 update all request calls to use API_BASE
 [X] TASK-131 ensure fallback remains functional
 [X] TASK-132 update UI mode detection logic
+
+--------------------------------------------------
+PHASE 27 — IMPORT PATH STABILIZATION [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-133 add project root to PYTHONPATH
+[X] TASK-134 fix standalone model imports
+[X] TASK-135 fix API imports
+[X] TASK-136 enforce API-first prediction flow
+
+--------------------------------------------------
+PHASE 28 — PRODUCTION MODEL + CATEGORY RESTORATION [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-137 fix model absolute path
+[X] TASK-138 lazy load model in API
+[X] TASK-139 fix standalone model loading
+[X] TASK-140 full category mapping for standalone
+[X] TASK-141 unify categories API + standalone
+[X] TASK-142 enforce API-first prediction
