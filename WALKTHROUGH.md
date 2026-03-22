@@ -730,3 +730,14 @@ To explicitly purge the `FastAPI` instance from requiring a raw historical datas
 1. **Startup Hardening (`TASK-124`)**: Heavily wrapped the `lifespan` execution contexts catching exceptions explicitly. If `analytics_engine` fails to parse a dataset, `_CACHE` operates purely conceptually.
 2. **Static Types (`TASK-125`)**: Defined a hardcoded `STATIC_CATEGORIES` dictionary injected natively via `app.get("/categories")`. If the system fails to read `csv`, categorical routing acts exactly identical.
 3. **Inference Decoupling (`TASK-126` & `TASK-127`)**: The model evaluation pipeline defaults dynamically mapping zero instances back to normalized rates via `get()`. The similar-project endpoint successfully returns `{"status": "unavailable"}` gracefully if memory buffers lack `projects_df`.
+
+---
+
+## Phase 26 — Streamlit Cloud API Connection
+
+### Objective
+To redirect the Streamlit interface away from local diagnostic instances and dynamically latch onto the official hosted API on Render while preserving standalone capabilities gracefully.
+
+### Implementation Details
+1. **Dynamic Target Config (`TASK-128 & TASK-129 & TASK-130`)**: Discarded `http://localhost:8000` entirely in favor of an `os.getenv("LAUNCHSENSE_API", "https://launchsense-api.onrender.com")` fallback architecture spanning all distinct requests payloads.
+2. **Badge Rendering Ordering (`TASK-131 & TASK-132`)**: Restructured the visual pipeline such that `st.session_state` connects sequentially *after* the initial categorical layout fetch occurs. This guarantees cold-start renders correctly reflect true upstream operational status immediately natively toggling the frontend indicator to `🟢 Standalone` instantly if Render is sleeping.

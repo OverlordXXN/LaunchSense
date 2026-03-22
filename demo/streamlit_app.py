@@ -8,18 +8,12 @@ st.title("LaunchSense — Crowdfunding Success Predictor")
 st.caption("AI-powered simulator for predicting crowdfunding success, optimizing funding goals, and analyzing campaign strategy.")
 st.caption("Not affiliated with Kickstarter. Independent analytical tool.")
 
-col1, col2 = st.columns([4, 1])
-with col1:
-    st.markdown("[View Source on GitHub](https://github.com/OverlordXXN/LaunchSense)")
-with col2:
-    if st.session_state.get("standalone_mode"):
-        st.info("🟢 Cloud Mode (Standalone)")
-    else:
-        st.caption("🔵 API Mode")
+import os
 
-st.markdown("Enter your project parameters below to get success predictions and goal optimization.")
-
-API_BASE_URL = "http://localhost:8000"
+API_BASE = os.getenv(
+    "LAUNCHSENSE_API",
+    "https://launchsense-api.onrender.com"
+)
 
 if "standalone_mode" not in st.session_state:
     st.session_state.standalone_mode = False
@@ -81,7 +75,7 @@ def _fetch_categories_api():
     import time
     for attempt in range(2):
         try:
-            resp = requests.get(f"{API_BASE_URL}/categories", timeout=20)
+            resp = requests.get(f"{API_BASE}/categories", timeout=20)
             resp.raise_for_status()
             return resp.json()
         except Exception as e:
@@ -112,6 +106,17 @@ def fetch_categories_map():
 categories_map = fetch_categories_map()
 # Sort categories alphabetically for better UX
 sorted_categories = sorted(list(categories_map.keys()))
+
+col1, col2 = st.columns([4, 1])
+with col1:
+    st.markdown("[View Source on GitHub](https://github.com/OverlordXXN/LaunchSense)")
+with col2:
+    if st.session_state.get("standalone_mode"):
+        st.info("🟢 Cloud Mode (Standalone)")
+    else:
+        st.caption("🔵 API Mode")
+
+st.markdown("Enter your project parameters below to get success predictions and goal optimization.")
 
 # Create main Dashboard Layout
 main_col1, main_col2 = st.columns([1, 2], gap="large")
@@ -160,7 +165,7 @@ with main_col2:
             with st.spinner("Analyzing project parameters..."):
                 if not st.session_state.standalone_mode:
                     try:
-                        predict_resp = requests.post(f"{API_BASE_URL}/predict", json=payload, timeout=10)
+                        predict_resp = requests.post(f"{API_BASE}/predict", json=payload, timeout=10)
                         predict_resp.raise_for_status()
                         predict_data = predict_resp.json()
                     except requests.exceptions.RequestException:
@@ -211,7 +216,7 @@ with main_col2:
             with st.spinner("Optimizing funding goal..."):
                 if not st.session_state.standalone_mode:
                     try:
-                        optimize_resp = requests.post(f"{API_BASE_URL}/optimize", json=payload, timeout=10)
+                        optimize_resp = requests.post(f"{API_BASE}/optimize", json=payload, timeout=10)
                         optimize_resp.raise_for_status()
                         opt_data = optimize_resp.json()
                     except requests.exceptions.RequestException:
@@ -327,7 +332,7 @@ with main_col2:
             with st.spinner("Finding similar historical projects..."):
                 if not st.session_state.standalone_mode:
                     try:
-                        sim_resp = requests.post(f"{API_BASE_URL}/similar-projects", json=payload, timeout=5)
+                        sim_resp = requests.post(f"{API_BASE}/similar-projects", json=payload, timeout=5)
                         sim_resp.raise_for_status()
                         sim_data = sim_resp.json()
                     except requests.exceptions.RequestException:
@@ -385,7 +390,7 @@ with main_col2:
                             
                             if not st.session_state.standalone_mode:
                                 try:
-                                    c_resp = requests.post(f"{API_BASE_URL}/predict?include_contributions=false", json=cg_payload, timeout=5)
+                                    c_resp = requests.post(f"{API_BASE}/predict?include_contributions=false", json=cg_payload, timeout=5)
                                     c_resp.raise_for_status()
                                     c_data = c_resp.json()
                                 except requests.exceptions.RequestException:

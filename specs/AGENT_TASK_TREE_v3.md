@@ -273,3 +273,13 @@ PHASE 25 — DATASET DECOUPLING [COMPLETED]
 [X] TASK-125 implement static category mapping in backend
 [X] TASK-126 ensure prediction works using only trained model
 [X] TASK-127 gracefully disable historical analytics if dataset missing
+
+--------------------------------------------------
+PHASE 26 — STREAMLIT CLOUD API CONNECTION [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-128 replace localhost API references
+[X] TASK-129 introduce configurable API_BASE
+[X] TASK-130 update all request calls to use API_BASE
+[X] TASK-131 ensure fallback remains functional
+[X] TASK-132 update UI mode detection logic
