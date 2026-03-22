@@ -4,38 +4,110 @@ import pandas as pd
 
 st.set_page_config(page_title="Kickstarter Success Predictor", layout="wide")
 
-st.title("Kickstarter Project Viability Analyzer")
+st.title("LaunchSense — Crowdfunding Success Predictor")
+st.caption("AI-powered simulator for predicting crowdfunding success, optimizing funding goals, and analyzing campaign strategy.")
+st.caption("Not affiliated with Kickstarter. Independent analytical tool.")
+
+col1, col2 = st.columns([4, 1])
+with col1:
+    st.markdown("[View Source on GitHub](https://github.com/OverlordXXN/LaunchSense)")
+with col2:
+    if st.session_state.get("standalone_mode"):
+        st.info("🟢 Cloud Mode (Standalone)")
+    else:
+        st.caption("🔵 API Mode")
+
 st.markdown("Enter your project parameters below to get success predictions and goal optimization.")
 
 API_BASE_URL = "http://localhost:8000"
 
+if "standalone_mode" not in st.session_state:
+    st.session_state.standalone_mode = False
+
 @st.cache_data(ttl=3600)
-def fetch_categories_map():
-    """Fetches the dataset-derived category/subcategory structure from the backend API."""
+def _fetch_categories_offline():
+    try:
+        df = pd.read_csv("data/processed/full_dataset.csv")
+        mapping = {}
+        for cat, subcat in zip(df['category'], df['subcategory']):
+            cat_norm = str(cat).strip().title()
+            subcat_norm = str(subcat).strip().title()
+            if cat_norm not in mapping:
+                mapping[cat_norm] = set()
+            mapping[cat_norm].add(subcat_norm)
+        return {"source": "dataset", "mapping": {k: sorted(list(v)) for k, v in mapping.items()}}
+    except Exception:
+        return {"source": "fallback", "mapping": {
+            "Technology": ["Web", "Hardware", "Gadgets"],
+            "Games": ["Tabletop Games", "Video Games"],
+            "Art": ["Painting", "Digital Art"]
+        }}
+
+@st.cache_data(ttl=3600)
+def _get_offline_features():
+    try:
+        df = pd.read_csv("data/processed/full_dataset.csv")
+        cat_success = df.groupby('category')['category_success_rate'].first().to_dict() if 'category_success_rate' in df.columns else {}
+        subcat_success = df.groupby('subcategory')['subcategory_success_rate'].first().to_dict() if 'subcategory_success_rate' in df.columns else {}
+        median_goal = df['goal'].median()
+        projects_df = df[['category', 'subcategory', 'goal', 'campaign_duration', 'is_successful']].copy()
+        return cat_success, subcat_success, median_goal, projects_df
+    except Exception:
+        return {}, {}, 5000.0, pd.DataFrame(columns=['category', 'subcategory', 'goal', 'campaign_duration', 'is_successful'])
+
+def _map_payload_offline(payload):
+    cat_success, subcat_success, median_goal, _ = _get_offline_features()
+    cat = payload["category"]
+    subcat = payload["subcategory"]
+    goal = payload["goal"]
+    
+    cat_succ = cat_success.get(cat, 0.35)
+    subcat_succ = subcat_success.get(subcat, cat_succ)
+    realism = float(min(max(0.01, median_goal / (goal + 1)), 0.99))
+    
+    return {
+        'goal': goal,
+        'goal_realism_score': realism,
+        'category_success_rate': cat_succ,
+        'subcategory_success_rate': subcat_succ,
+        'competition_density': 10,
+        'launch_month': payload["launch_month"],
+        'launch_day_of_week': payload["launch_day_of_week"],
+        'campaign_duration': payload["campaign_duration"]
+    }
+
+@st.cache_data(ttl=3600)
+def _fetch_categories_api():
     import time
     for attempt in range(2):
         try:
             resp = requests.get(f"{API_BASE_URL}/categories", timeout=20)
             resp.raise_for_status()
-            data = resp.json()
-            
-            mapping = data.get("mapping", data)
-            source = data.get("source", "unknown")
-            
-            if source == "fallback":
-                st.warning("⚠️ Could not load dynamic categories from the backend dataset. Using limited fallback options.")
-                
-            return mapping
+            return resp.json()
         except Exception as e:
             if attempt < 1:
                 time.sleep(1)
                 continue
-            st.warning(f"Failed to connect to dynamic categories API: {e}. Using offline fallback.")
-            return {
-                "Technology": ["Web", "Hardware", "Gadgets"],
-                "Games": ["Tabletop Games", "Video Games"],
-                "Art": ["Painting", "Digital Art"]
-            }
+            raise e
+
+def fetch_categories_map():
+    """Fetches the dataset-derived category/subcategory structure from either backend API or offline fallback."""
+    if st.session_state.standalone_mode:
+        data = _fetch_categories_offline()
+    else:
+        try:
+            data = _fetch_categories_api()
+            st.session_state.standalone_mode = False
+        except Exception as e:
+            st.warning(f"Failed to connect to dynamic categories API: {e}. Switching to Standalone Mode.")
+            st.session_state.standalone_mode = True
+            data = _fetch_categories_offline()
+            
+    mapping = data.get("mapping", data)
+    source = data.get("source", "unknown")
+    if source == "fallback":
+        st.warning("⚠️ Could not load dynamic categories from the backend dataset. Using limited fallback options.")
+    return mapping
 
 categories_map = fetch_categories_map()
 # Sort categories alphabetically for better UX
@@ -82,10 +154,29 @@ with main_col2:
         try:
             # LAYER 1: Prediction
             st.header("Prediction")
+            if st.session_state.standalone_mode:
+                st.caption("Running in Cloud Standalone Mode")
+                
             with st.spinner("Analyzing project parameters..."):
-                predict_resp = requests.post(f"{API_BASE_URL}/predict", json=payload, timeout=10)
-                predict_resp.raise_for_status()
-                predict_data = predict_resp.json()
+                if not st.session_state.standalone_mode:
+                    try:
+                        predict_resp = requests.post(f"{API_BASE_URL}/predict", json=payload, timeout=10)
+                        predict_resp.raise_for_status()
+                        predict_data = predict_resp.json()
+                    except requests.exceptions.RequestException:
+                        st.session_state.standalone_mode = True
+                        
+                if st.session_state.standalone_mode:
+                    from src.prediction.predictor import predict_success_probability
+                    mapped_payload = _map_payload_offline(payload)
+                    pred_res = predict_success_probability(mapped_payload, include_contributions=True)
+                    predict_data = {
+                        "success_probability": pred_res["success_probability"],
+                        "predicted_class": pred_res["predicted_class"],
+                        "confidence_level": pred_res.get("confidence_level", "Unknown"),
+                        "warning_flags": pred_res.get("warning_flags", []),
+                        "feature_contributions": pred_res.get("feature_contributions", {})
+                    }
                 
                 prob = predict_data.get("success_probability", 0) * 100
                 pred_class = predict_data.get("predicted_class", "Unknown")
@@ -118,9 +209,25 @@ with main_col2:
             # LAYER 2: Goal Optimization
             st.header("Optimization")
             with st.spinner("Optimizing funding goal..."):
-                optimize_resp = requests.post(f"{API_BASE_URL}/optimize", json=payload, timeout=10)
-                optimize_resp.raise_for_status()
-                opt_data = optimize_resp.json()
+                if not st.session_state.standalone_mode:
+                    try:
+                        optimize_resp = requests.post(f"{API_BASE_URL}/optimize", json=payload, timeout=10)
+                        optimize_resp.raise_for_status()
+                        opt_data = optimize_resp.json()
+                    except requests.exceptions.RequestException:
+                        st.session_state.standalone_mode = True
+                        
+                if st.session_state.standalone_mode:
+                    from src.prediction.goal_optimizer import optimize_goal
+                    mapped_payload = _map_payload_offline(payload)
+                    opt_res = optimize_goal(mapped_payload)
+                    original_prob = predict_data.get("success_probability", 0)
+                    opt_data = {
+                        "recommended_goal": opt_res["optimal_goal"],
+                        "expected_success_probability": opt_res["optimal_probability"],
+                        "improvement_over_original": opt_res["optimal_probability"] - original_prob,
+                        "goal_analysis": opt_res.get("goal_analysis", [])
+                    }
                 
                 rec_goal = opt_data.get("recommended_goal", 0)
                 exp_prob = opt_data.get("expected_success_probability", 0) * 100
@@ -218,9 +325,21 @@ with main_col2:
             st.header("Historical Context")
             st.write("Compare your idea against identical real-world campaigns from our dataset.")
             with st.spinner("Finding similar historical projects..."):
-                sim_resp = requests.post(f"{API_BASE_URL}/similar-projects", json=payload, timeout=5)
-                sim_resp.raise_for_status()
-                sim_data = sim_resp.json()
+                if not st.session_state.standalone_mode:
+                    try:
+                        sim_resp = requests.post(f"{API_BASE_URL}/similar-projects", json=payload, timeout=5)
+                        sim_resp.raise_for_status()
+                        sim_data = sim_resp.json()
+                    except requests.exceptions.RequestException:
+                        st.session_state.standalone_mode = True
+                        
+                if st.session_state.standalone_mode:
+                    from src.analytics.similarity import calculate_similarity_metrics
+                    _, _, _, projects_df = _get_offline_features()
+                    if not projects_df.empty:
+                        sim_data = calculate_similarity_metrics(payload, projects_df)
+                    else:
+                        sim_data = {}
                 
                 count = sim_data.get("similar_projects_found", 0)
                 if count > 0:
@@ -264,13 +383,23 @@ with main_col2:
                             cg_payload = payload.copy()
                             cg_payload["goal"] = cg
                             
-                            c_resp = requests.post(f"{API_BASE_URL}/predict?include_contributions=false", json=cg_payload, timeout=5)
-                            if c_resp.status_code == 200:
-                                c_data = c_resp.json()
-                                comp_results.append({
-                                    "Goal": cg,
-                                    "Probability": c_data.get("success_probability", 0) * 100
-                                })
+                            if not st.session_state.standalone_mode:
+                                try:
+                                    c_resp = requests.post(f"{API_BASE_URL}/predict?include_contributions=false", json=cg_payload, timeout=5)
+                                    c_resp.raise_for_status()
+                                    c_data = c_resp.json()
+                                except requests.exceptions.RequestException:
+                                    st.session_state.standalone_mode = True
+                                    
+                            if st.session_state.standalone_mode:
+                                from src.prediction.predictor import predict_success_probability
+                                mapped_cg_payload = _map_payload_offline(cg_payload)
+                                c_data = predict_success_probability(mapped_cg_payload, include_contributions=False)
+                                
+                            comp_results.append({
+                                "Goal": cg,
+                                "Probability": c_data.get("success_probability", 0) * 100
+                            })
                                 
                     if comp_results:
                         df_comp = pd.DataFrame(comp_results)
@@ -282,12 +411,12 @@ with main_col2:
                 except Exception as e:
                     st.warning(f"Failed to generate scenarios: {e}")
                     
-        except requests.exceptions.ConnectionError:
-            st.error("FastAPI server not detected. Please start the API using: `uvicorn src.api.app:app --reload`")
         except Exception as e:
-            st.error(f"An error occurred while calling the API: {e}")
+            st.error(f"UI Error during prediction build: {e}")
     
     else:
         st.info("Adjust your parameters on the left and click **Predict Success** to view the comprehensive analytics dashboard.")
 
-
+st.markdown("---")
+st.markdown("LaunchSense v1.0 | Built with Streamlit + XGBoost")
+st.caption("Data derived from publicly available Kickstarter campaign data (2018–2025).  \nNot affiliated with Kickstarter. Kickstarter is a trademark of Kickstarter PBC.")

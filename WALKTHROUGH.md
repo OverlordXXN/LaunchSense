@@ -678,3 +678,43 @@ To bypass basic bot detection and restore scraper functionality:
 1. **Header Injection**: All outgoing requests in `src/scraper/crawler.py` and `src/scraper/parser.py` have been updated to include a standard `User-Agent` (Chrome/115.0 on Windows) and an `Accept-Language` header.
 2. **Requests Session**: Instead of using stateless `requests.get()`, both modules now utilize a `requests.Session()` object which retains headers natively across multiple project fetches and optimizes TCP connection reuse.
 3. **Validation**: Requests are wrapped in `raise_for_status()` to catch HTTP errors and gracefully terminate the scrape loop with clear logging.
+
+---
+
+## Phase 21 — Cloud Deployment Compatibility
+
+### Objective
+To implement a standalone "Cloud Mode" fallback for the Streamlit application to ensure it can operate natively in environments like Streamlit Cloud without depending on the local FastAPI backend.
+
+### Implementation Details
+1. **Mode Detection**: A new `st.session_state.standalone_mode` boolean explicitly tracks API health. All `.post()` and `.get()` analytical queries sent to the `API_BASE_URL` were wrapped in `try/except` safeguards catching `requests.exceptions.RequestException`.
+2. **Offline Categories Integration (`TASK-106`)**: If the initial `/categories` query fails, the app flips the standalone mode to True and manually loads `data/processed/full_dataset.csv`, deduplicates mappings, normalizes spelling, and mocks the exact identical JSON structure downstream.
+3. **Local Inference Loading (`TASK-105 & TASK-107`)**: When in Standalone Mode, the `demo/streamlit_app.py` directly imports the backend modules natively (`prediction.predictor`, `prediction.goal_optimizer`, `analytics.similarity`). The system bridges the connection by building an offline approximation of the FastAPI translation layer (`_map_payload_offline`), fetching `models/latest.joblib`, and calculating ML evaluations directly inside the Streamlit memory space context.
+4. **UI Indicators (`TASK-108`)**: A toggleable badge string `st.info("Cloud Mode (Standalone)")` vs `st.caption("API Mode")` was integrated underneath the main Title signaling which routing logic handled the inference.
+
+**Validation Details**:
+Turning off the running server (`uvicorn`) and attempting to trigger predictions no longer terminates in a stack-trace. The UI dynamically detects the dead endpoint, seamlessly switches to Standalone Cloud Mode, retrieves categories from the CSV cache, evaluates local SHAP approximations, and calculates optimal goals internally.
+
+---
+
+## Phase 22 — Standalone Inference Fix
+
+### Objective
+To refactor the Streamlit standalone fallback logic to unify the inference pipeline explicitly. This eliminates reliance on deliberate HTTP exceptions (used strictly for control flow) and directly embraces `st.session_state` branching across all API boundaries.
+
+### Implementation Details
+1. **Control Flow Standardization (`TASK-112`)**: Removed internal `raise requests.exceptions.ConnectionError` blocks. The prediction, optimization, and contextual evaluation logic is now segmented distinctly into unified `if st.session_state.standalone_mode:` operations.
+2. **Error Safety & UX Continuity (`TASK-109 & TASK-110`)**: The outermost `st.error` generic fallback was replaced. Standard API request timeouts appropriately trigger the Standalone toggle, seamlessly rendering the `st.caption("Running in Cloud Standalone Mode")` descriptor without violently halting the user experience.
+3. **Execution Delivery (`TASK-111`)**: The unified pipeline accurately bridges `src/prediction` execution scopes and streams dictionary representations directly into the native Streamlit rendering layout identically to standard operational metrics.
+
+---
+
+## Phase 23 — Branding & Production Polish
+
+### Objective
+To apply final production UI polish, legal disclaimers, and open-source branding elements signaling public readiness.
+
+### Implementation Details
+1. **Header Rebranding (`TASK-113 & TASK-114`)**: Migrated the generic application title to the formalized **LaunchSense** brand, positioned alongside a descriptive subtitle articulating the purpose of the ML simulator. 
+2. **Legal Attributions (`TASK-115 & TASK-119`)**: Added explicit disclaimers declaring independence from Kickstarter PBC globally at both the immediate subtitle point of origin and the terminal footer, securing safe trademark utilization.
+3. **UX Enhancements (`TASK-116 & TASK-117 & TASK-118`)**: Embedded the open-source GitHub repository URL seamlessly into the layout configuration, added explicit color-coded icons to the Standalone toggle, and finalized a versioned footer (`v1.0`).
