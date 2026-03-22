@@ -14,7 +14,7 @@ data/raw/*
 data/processed/*
 
 # allow production dataset
-!data/processed/full_dataset.csv.gz
+!data/processed/historical_dataset.csv
 
 # Models
 models/*
