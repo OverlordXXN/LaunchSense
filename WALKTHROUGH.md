@@ -814,3 +814,16 @@ Ensure LaunchSense is a strict, API-driven, production-ready web application by 
 2. **Unified JSON Target (`TASK-172, TASK-173, & TASK-174`)**: Aggregated the `/predict` backend endpoint (`src/api/app.py`) into a singular master payload explicitly returning `probability`, `outcome`, `confidence`, `shap_values`, `feature_names`, `base_rate`, nested `historical` similarities, and `optimization` metrics natively in one highly deterministic JSON blob. 
 3. **Strict Validation Flow (`TASK-175, TASK-176`)**: Dynamically restricted user interactions forcing predictions to disable completely if `API_BASE` is unreachable, gracefully rejecting fallback configurations. 
 4. **Environment Consistency (`TASK-177, TASK-182`)**: Injected global execution paths tracking backend references natively across `ROOT` evaluations safely. Extracted dynamic `$PORT` environments mapping smoothly into native `uvicorn.run()` blocks compatible inherently with Cloud deployments (Render).
+
+---
+
+## Phase 33 — Render Cold Start Timeout Handling
+
+### Objective
+Enhance robust latency tolerance managing Render's sleep-cycles explicitly handling 30-50+ second spin-up delays for free-tier nodes. Streamlit bindings must delay offline states seamlessly bypassing transient cold drops gracefully.
+
+### Implementation Details
+1. **Latency Threshold Expansion (`TASK-186`)**: Escaped default Streamlit fetch constraints aggressively jumping generic `timeout=10` layers directly into `timeout=60` mappings allowing substantial headroom for native Uvicorn docker rebuilds remotely.
+2. **UI Warming Cues (`TASK-187`)**: Injected synchronous frontend awareness replacing standard `Analyzing...` spinners with concrete explicit wait expectations `Starting AI engine (cold start may take ~30s)...` conditioning user expectations proactively.
+3. **Recursive API Forgiveness (`TASK-188 & TASK-189`)**: Bypassed immediate application locking wrapping explicit prediction calls within `max_retries = 2` iterative loops. Online execution is solely stripped into `api_online = False` strictly upon total recurring iteration exhaustion masking single drops entirely.
+4. **Targeted Backend Messages (`TASK-190`)**: Translated aggressive failure exceptions (`Prediction Backend Offline!`) gracefully targeting specific `AI engine waking up (first request may take ~30s). Please try again.` directives preserving deployment immersion purely protecting UX boundaries natively.

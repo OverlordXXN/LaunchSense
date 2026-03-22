@@ -32,12 +32,12 @@ def _fetch_categories_api():
     import time
     for attempt in range(2):
         try:
-            resp = requests.get(f"{API_BASE}/categories", timeout=20)
+            resp = requests.get(f"{API_BASE}/categories", timeout=60)
             resp.raise_for_status()
             return resp.json()
         except Exception as e:
             if attempt < 1:
-                time.sleep(1)
+                time.sleep(2)
                 continue
             raise e
 
@@ -114,17 +114,23 @@ with main_col2:
         try:
             # LAYER 1: Prediction
             st.header("Prediction")
-            with st.spinner("Analyzing project parameters..."):
-                # TASK-136 Ensure API-first prediction
-                try:
-                    predict_resp = requests.post(f"{API_BASE}/predict", json=payload, timeout=10)
-                    predict_resp.raise_for_status()
-                    predict_data = predict_resp.json()
-                    st.session_state.api_online = True
-                except requests.exceptions.RequestException as e:
-                    st.session_state.api_online = False
-                    st.error(f"🔴 Prediction Backend Offline: Unable to fulfill request. ({e})")
-                    st.stop()
+            with st.spinner("Starting AI engine (cold start may take ~30s)..."):
+                import time
+                max_retries = 2
+                for attempt in range(max_retries):
+                    try:
+                        predict_resp = requests.post(f"{API_BASE}/predict", json=payload, timeout=60)
+                        predict_resp.raise_for_status()
+                        predict_data = predict_resp.json()
+                        st.session_state.api_online = True
+                        break
+                    except requests.exceptions.RequestException as e:
+                        if attempt < max_retries - 1:
+                            time.sleep(2)
+                            continue
+                        st.session_state.api_online = False
+                        st.error(f"🔴 AI engine waking up (first request may take ~30s). Please try again. ({e})")
+                        st.stop()
                 prob = predict_data.get("probability", 0) * 100
                 pred_class = predict_data.get("outcome", "Unknown")
                 confidence = predict_data.get("confidence", "Unknown")

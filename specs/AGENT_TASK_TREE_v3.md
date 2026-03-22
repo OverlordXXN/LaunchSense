@@ -355,3 +355,13 @@ PHASE 32 — PRODUCTION HARDENING & FULL SYSTEM AUDIT [COMPLETED]
 [X] TASK-183 Evaluate Streamlit URL targets evaluating `LAUNCHSENSE_API` defaults
 [X] TASK-184 End-to-End Validate Predictions, Optimization, historical metrics, and waterfall parameters rendering synchronously.
 [X] TASK-185 Record Architectural State into finalized structural dependencies
+
+--------------------------------------------------
+PHASE 33 — RENDER COLD START TIMEOUT HANDLING [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-186 Increase all API request timeouts in Streamlit to 60s
+[X] TASK-187 Add loading spinner for API wait ("Starting AI engine (cold start may take ~30s)...")
+[X] TASK-188 Add retry logic on timeout (retry once automatically, max retries = 2)
+[X] TASK-189 Do not mark API offline on first timeout, only after retry fails
+[X] TASK-190 Improve error message to "AI engine waking up (first request may take ~30s)"
