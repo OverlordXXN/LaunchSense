@@ -59,43 +59,22 @@ STATIC_CATEGORIES = {
 
 historical_df = None
 
-def load_historical_dataset():
-    csv_path = ROOT / "data" / "processed" / "full_dataset.csv"
-    gz_path = ROOT / "data" / "processed" / "full_dataset.csv.gz"
-    fallback_path = ROOT / "data" / "raw" / "kaggle" / "kickstarter_projects.csv"
+def load_dataset():
+    ROOT = Path(__file__).resolve().parents[2]
+    
+    csv = ROOT / "data" / "processed" / "full_dataset.csv"
+    gz  = ROOT / "data" / "processed" / "full_dataset.csv.gz"
 
-    if csv_path.exists():
-        target = csv_path
-        comp = None
-    elif gz_path.exists():
-        target = gz_path
-        comp = "gzip"
-    elif fallback_path.exists():
-        target = fallback_path
-        comp = None
-    else:
-        return None
-        
-    try:
-        df = pd.read_csv(target, compression=comp) if comp else pd.read_csv(target)
-        # Normalize columns so historical search works natively regardless of dataset used
-        col_map = {c: c.lower().replace(" ", "_") for c in df.columns}
-        df = df.rename(columns=col_map)
-        
-        # Ensure standard keys
-        if "name" in df.columns and "title" not in df.columns:
-            df["title"] = df["name"]
-        if "usd_pledged" in df.columns and "pledged" not in df.columns:
-            df["pledged"] = df["usd_pledged"]
-        if "is_successful" in df.columns and "success" not in df.columns:
-            df["success"] = df["is_successful"]
-        elif "state" in df.columns and "success" not in df.columns:
-            df["success"] = (df["state"].astype(str).str.lower() == "successful")
-            
-        return df
-    except Exception as e:
-        logger.error(f"Failed to load historical dataset from {target}: {e}")
-        return None
+    if csv.exists():
+        print("Loading dataset CSV:", csv)
+        return pd.read_csv(csv)
+
+    if gz.exists():
+        print("Loading dataset GZIP:", gz)
+        return pd.read_csv(gz, compression="gzip")
+
+    print("No dataset found")
+    return None
 
 def find_similar_projects(payload: ProjectInput, df: pd.DataFrame, top_n=5) -> list:
     if df is None or df.empty:
@@ -183,18 +162,33 @@ async def lifespan(app: FastAPI):
             
             logger.info("Historical cache mapped successfully from dataset.")
             
-        csv_path = os.path.join(os.path.dirname(SRC_DIR), 'data', 'processed', 'full_dataset.csv')
-        if os.path.exists(csv_path):
-            cols = pd.read_csv(csv_path, nrows=0).columns
-            norm_cols = [c.lower().replace('-', '_') for c in cols]
+        global historical_df
+        historical_df = load_dataset()
+        historical_available = historical_df is not None
+        
+        if historical_available:
+            print("Dataset rows:", len(historical_df))
             
-            actual_cat_col = next((c for c, nc in zip(cols, norm_cols) if nc in ['category', 'main_category']), None)
-            actual_subcat_col = next((c for c, nc in zip(cols, norm_cols) if nc in ['subcategory', 'sub_category']), None)
+            # Normalize dataset globally for historical similarity
+            col_map = {c: c.lower().replace("-", "_").replace(" ", "_") for c in historical_df.columns}
+            historical_df = historical_df.rename(columns=col_map)
+            
+            if "name" in historical_df.columns and "title" not in historical_df.columns:
+                historical_df["title"] = historical_df["name"]
+            if "usd_pledged" in historical_df.columns and "pledged" not in historical_df.columns:
+                historical_df["pledged"] = historical_df["usd_pledged"]
+            if "is_successful" in historical_df.columns and "success" not in historical_df.columns:
+                historical_df["success"] = historical_df["is_successful"]
+            elif "state" in historical_df.columns and "success" not in historical_df.columns:
+                historical_df["success"] = (historical_df["state"].astype(str).str.lower() == "successful")
+                
+            # Now build categories mapping
+            cols = historical_df.columns
+            actual_cat_col = next((c for c in cols if c in ['category', 'main_category']), None)
+            actual_subcat_col = next((c for c in cols if c in ['subcategory', 'sub_category']), None)
             
             if actual_cat_col and actual_subcat_col:
-                cat_df = pd.read_csv(csv_path, usecols=[actual_cat_col, actual_subcat_col])
-                cat_df = cat_df.dropna(subset=[actual_cat_col, actual_subcat_col])
-                
+                cat_df = historical_df[[actual_cat_col, actual_subcat_col]].dropna().copy()
                 cat_df[actual_cat_col] = cat_df[actual_cat_col].apply(clean_label)
                 cat_df[actual_subcat_col] = cat_df[actual_subcat_col].apply(clean_label)
                 cat_df = cat_df[(cat_df[actual_cat_col] != "") & (cat_df[actual_subcat_col] != "")]
@@ -213,7 +207,7 @@ async def lifespan(app: FastAPI):
                 logger.warning("Category columns missing. Using fallback.")
                 _CACHE['categories_map'] = {}
         else:
-            logger.warning("full_dataset.csv not found for categories.")
+            logger.warning("No dataset found for categories.")
             _CACHE['categories_map'] = {}
 
     except Exception as e:

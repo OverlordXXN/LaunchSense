@@ -376,3 +376,12 @@ PHASE 34 — RESTORE HISTORICAL CONTEXT DATASET [COMPLETED]
 [X] TASK-194 Return similar_projects inside /predict payload
 [X] TASK-195 If dataset missing, return "historical_available": false
 [X] TASK-196 In Streamlit UI, if historical_available false hide Historical Context section entirely
+
+--------------------------------------------------
+PHASE 34.6 — FIX GZIP DATASET LOADING [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-197 Create single unified dataset loader function `load_dataset()` tracking CSV and GZIP.
+[X] TASK-198 Use loader for both historical context and categories endpoint natively avoiding legacy fallback loaders.
+[X] TASK-199 At startup, populate `historical_df` globally and track availability.
+[X] TASK-200 Log dataset row lengths natively capturing successful extractions explicitly.

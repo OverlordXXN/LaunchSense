@@ -839,3 +839,14 @@ Reignite empirical `Historical Context` validations merging identical real-world
 1. **Dynamic Universal Loader (`TASK-191 & TASK-192`)**: Constructed a fallback parsing algorithm loading `full_dataset.csv` defaulting gracefully onto raw `kaggle/kickstarter_projects.csv`. Injected a global schema-normalization sweep explicitly translating disparate dataset structures mapped seamlessly into generalized `[title, category, goal, pledged, success]` properties. Exposed the object globally across API mounts handling similarity queries directly.
 2. **Nearest-Neighbor Cosine Routing (`TASK-193 & TASK-194`)**: Bootstrapped native `find_similar_projects` mathematical routines inside `src/api/app.py` returning precise distance derivatives (incorporating logical goal variations + proportional duration targets natively isolating top 5 nearest neighbors exactly). Spliced evaluations strictly merging within `/predict` targets universally validating architectures.
 3. **UI Boolean Toggle Hook (`TASK-195 & TASK-196`)**: Appended native `"historical_available": True|False` JSON metrics bounding prediction payloads conditionally displaying DataFrame visualizations. Refactored `st.warning()` omissions stripping Streamlit layout rendering securely masking errors organically without exception halts.
+
+---
+
+## Phase 34.6 — Fix GZIP Dataset Loading
+
+### Objective
+Streamline and unify dataset execution paths eliminating arbitrary Kaggle file representations injecting identical compression-enabled `GZIP` handlers matching `/predict` and `/categories` validations.
+
+### Implementation Details
+1. **Unified Dataset Executions (`TASK-197 & TASK-198`)**: Constructed a strictly deterministic global `load_dataset()` parsing hierarchy dropping generic Kaggle artifacts universally. Explicit bindings dictate `full_dataset.csv` prioritization natively bypassing towards `full_dataset.csv.gz` gracefully using `pd.read_csv(..., compression="gzip")`. Rewired initial categories dataset checks natively wrapping the exact loader replacing duplicate execution instances cleanly.
+2. **Global Startup Logging (`TASK-199 & TASK-200`)**: Evaluated `historical_available` flags strictly against universal loaders extracting integer lengths directly mapped onto `logger.info("Dataset rows: X")` variables. Unified backend abstractions securely avoiding offline deployment crash layers natively bounding memory targets correctly.
