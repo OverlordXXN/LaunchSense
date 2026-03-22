@@ -14,9 +14,11 @@ data/raw/*
 data/processed/*
 
 # Models
-models/
+models/*
+!models/latest.joblib
 *.pkl
 *.joblib
+!latest.joblib
 
 # Logs
 *.log

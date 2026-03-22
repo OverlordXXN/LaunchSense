@@ -313,3 +313,14 @@ PHASE 29 — FIX RELATIVE IMPORTS FOR FASTAPI CONTAINER [COMPLETED]
 [X] TASK-145 ensure src/api/__init__.py exists
 [X] TASK-146 remove sys.path hacks from Phase 27
 [X] TASK-147 verify uvicorn src.api.app:app compatibility
+
+--------------------------------------------------
+PHASE 30 — FIX MODEL PATH + API/STANDALONE FALLBACK [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-148 replace absolute model paths with dynamic ROOT
+[X] TASK-149 lazily load model in UI using get_model()
+[X] TASK-150 strip permanent standalone_mode locks
+[X] TASK-151 enforce API as strict primary with request-scoped fallback
+[X] TASK-152 fix UI indicator to reflect dynamic execution mode
+[X] TASK-153 ensure models/latest.joblib is globally un-ignored

@@ -25,8 +25,17 @@ API_BASE = os.getenv(
     "https://launchsense-api.onrender.com"
 )
 
-if "standalone_mode" not in st.session_state:
-    st.session_state.standalone_mode = False
+if "last_execution_mode" not in st.session_state:
+    st.session_state.last_execution_mode = "API"
+
+_MODEL = None
+import joblib
+
+def get_model():
+    global _MODEL
+    if _MODEL is None:
+        _MODEL = joblib.load(MODEL_PATH)
+    return _MODEL
 
 FULL_CATEGORIES = {
     "Technology": ["Hardware", "Web", "Software", "Apps", "Gadgets", "Robots", "DIY Electronics"],
@@ -109,16 +118,12 @@ def _fetch_categories_api():
 
 def fetch_categories_map():
     """Fetches the dataset-derived category/subcategory structure from either backend API or offline fallback."""
-    if st.session_state.standalone_mode:
+    try:
+        data = _fetch_categories_api()
+        st.session_state.last_execution_mode = "API"
+    except Exception as e:
         data = _fetch_categories_offline()
-    else:
-        try:
-            data = _fetch_categories_api()
-            st.session_state.standalone_mode = False
-        except Exception as e:
-            st.warning(f"Failed to connect to dynamic categories API: {e}. Switching to Standalone Mode.")
-            st.session_state.standalone_mode = True
-            data = _fetch_categories_offline()
+        st.session_state.last_execution_mode = "Standalone"
             
     mapping = data.get("mapping", data)
     source = data.get("source", "unknown")
@@ -134,7 +139,7 @@ col1, col2 = st.columns([4, 1])
 with col1:
     st.markdown("[View Source on GitHub](https://github.com/OverlordXXN/LaunchSense)")
 with col2:
-    if st.session_state.get("standalone_mode"):
+    if st.session_state.get("last_execution_mode", "API") == "Standalone":
         st.info("🟢 Cloud Mode (Standalone)")
     else:
         st.caption("🔵 API Mode")
@@ -182,22 +187,20 @@ with main_col2:
         try:
             # LAYER 1: Prediction
             st.header("Prediction")
-            if st.session_state.standalone_mode:
-                st.caption("Running in Cloud Standalone Mode")
-                
             with st.spinner("Analyzing project parameters..."):
                 # TASK-136 Ensure API-first prediction
                 try:
                     predict_resp = requests.post(f"{API_BASE}/predict", json=payload, timeout=10)
                     predict_resp.raise_for_status()
                     predict_data = predict_resp.json()
-                    st.session_state.standalone_mode = False
+                    used_standalone = False
                 except requests.exceptions.RequestException:
-                    st.session_state.standalone_mode = True
+                    used_standalone = True
                         
-                if st.session_state.standalone_mode:
+                if used_standalone:
+                    st.caption("Running in Cloud Standalone Mode")
                     try:
-                        mdl = joblib.load(MODEL_PATH)
+                        mdl = get_model()
                         mapped_payload = _map_payload_offline(payload)
                         features = [[
                             mapped_payload['goal'], mapped_payload['goal_realism_score'],
@@ -254,14 +257,14 @@ with main_col2:
                     optimize_resp = requests.post(f"{API_BASE}/optimize", json=payload, timeout=10)
                     optimize_resp.raise_for_status()
                     opt_data = optimize_resp.json()
-                    st.session_state.standalone_mode = False
+                    used_standalone_opt = False
                 except requests.exceptions.RequestException:
-                    st.session_state.standalone_mode = True
+                    used_standalone_opt = True
                         
-                if st.session_state.standalone_mode:
+                if used_standalone_opt:
                     mapped_payload = _map_payload_offline(payload)
                     try:
-                        mdl = joblib.load(MODEL_PATH)
+                        mdl = get_model()
                         current_prob = predict_data.get("success_probability", 0)
                         best_prob = current_prob
                         best_goal = mapped_payload['goal']
@@ -385,11 +388,11 @@ with main_col2:
                     sim_resp = requests.post(f"{API_BASE}/similar-projects", json=payload, timeout=5)
                     sim_resp.raise_for_status()
                     sim_data = sim_resp.json()
-                    st.session_state.standalone_mode = False
+                    used_standalone_sim = False
                 except requests.exceptions.RequestException:
-                    st.session_state.standalone_mode = True
+                    used_standalone_sim = True
                         
-                if st.session_state.standalone_mode:
+                if used_standalone_sim:
                     sim_data = {} # Disabled temporarily natively without src import dependencies
                 
                 count = sim_data.get("similar_projects_found", 0)
@@ -438,13 +441,13 @@ with main_col2:
                                 c_resp = requests.post(f"{API_BASE}/predict?include_contributions=false", json=cg_payload, timeout=5)
                                 c_resp.raise_for_status()
                                 c_data = c_resp.json()
-                                st.session_state.standalone_mode = False
+                                used_standalone_comp = False
                             except requests.exceptions.RequestException:
-                                st.session_state.standalone_mode = True
+                                used_standalone_comp = True
                                     
-                            if st.session_state.standalone_mode:
+                            if used_standalone_comp:
                                 try:
-                                    mdl = joblib.load(MODEL_PATH)
+                                    mdl = get_model()
                                     mapped_cg = _map_payload_offline(cg_payload)
                                     features = [[
                                         mapped_cg['goal'], mapped_cg['goal_realism_score'],

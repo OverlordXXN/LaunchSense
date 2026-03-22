@@ -776,3 +776,16 @@ To stabilize module resolution native entirely to Docker containers specifically
 ### Implementation Details
 1. **Module Hierarchies (`TASK-143 & TASK-144`)**: Eradicated all static top-level structure dependencies mutating module imports locally inside `src/api/app.py` pointing inwards via relative dependencies like `from .schemas import` and outwards securely up the explicit sibling chain `from ..prediction...`
 2. **Path Hardening (`TASK-145 & TASK-146`)**: Initialized a raw completely empty `__init__.py` file natively at `src/api/` coercing the directory structurally into a Python package cleanly overriding absolute string evaluation and removed brittle global injections entirely handling pathing from root context natively.
+
+---
+
+## Phase 30 — Fix Model Path + API/Standalone Fallback Logic
+
+### Objective
+Restructure fallback capabilities natively isolating API failures securely per-request avoiding persistent UI offline locking globally while enforcing absolute file references evaluating organically from `.gitignore`.
+
+### Implementation Details
+1. **Isolated Inference (`TASK-150 & TASK-151`)**: Scalpel-stripped arbitrary `st.session_state.standalone_mode = True` global bindings entirely across Streamlit replacing logic directly utilizing `used_standalone` conditionally constrained completely to HTTP latency/failure errors. Fallback behaves dynamically!
+2. **Mode Reactivity (`TASK-152`)**: Rewired the exact UI Network indicator explicitly relying on `last_execution_mode` binding natively reflecting exactly what module answered the inference.
+3. **Lazy Preloads (`TASK-148 & TASK-149`)**: Migrated Model loading out from monolithic scopes into explicit `get_model()` asynchronous cache injections mapping dynamically over evaluating parent paths natively avoiding filesystem absolute overrides mapping natively against `ROOT` structure gracefully.
+4. **Git Exposure (`TASK-153`)**: Configured `.gitignore` forcefully carving an exception for `!models/latest.joblib` preserving structural machine learning binary components intrinsically without ignoring arbitrary files maliciously.
