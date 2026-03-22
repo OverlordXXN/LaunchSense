@@ -765,3 +765,14 @@ To explicitly harmonize categoric UI selections safely preventing UI regressions
 1. **Lazy State Loader (`TASK-137 & TASK-138`)**: Overhauled the raw inference trigger structure natively inside `src/api/app.py` defining an asynchronous dynamic loader bound to `get_model()`, evaluating directly across `ROOT / "models"`, entirely suppressing startup initialization failures.
 2. **Native Standalone Executions (`TASK-139`)**: Injected `import joblib` strictly across offline scenarios manually shaping the XGBoost `2D Numpy Arrays`. Offline predictions natively load binary graphs dynamically discarding entirely any module imports pointing to backend architecture resolving path errors gracefully.
 3. **Categorical Alignments (`TASK-140 & TASK-141`)**: Extracted explicitly defined strings of all `15 Primary` Categories injecting them directly into the front-end stream ensuring UI capabilities mirror natively hosted datastores precisely.
+
+---
+
+## Phase 29 — Fix Relative Imports for FastAPI Container Execution
+
+### Objective
+To stabilize module resolution native entirely to Docker containers specifically removing legacy `sys.path.append()` executions and mutating application internals relying purely on hierarchical relative imports implicitly evaluating correctly regardless of explicit `ENV PYTHONPATH`.
+
+### Implementation Details
+1. **Module Hierarchies (`TASK-143 & TASK-144`)**: Eradicated all static top-level structure dependencies mutating module imports locally inside `src/api/app.py` pointing inwards via relative dependencies like `from .schemas import` and outwards securely up the explicit sibling chain `from ..prediction...`
+2. **Path Hardening (`TASK-145 & TASK-146`)**: Initialized a raw completely empty `__init__.py` file natively at `src/api/` coercing the directory structurally into a Python package cleanly overriding absolute string evaluation and removed brittle global injections entirely handling pathing from root context natively.

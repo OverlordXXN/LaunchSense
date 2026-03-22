@@ -303,3 +303,13 @@ PHASE 28 — PRODUCTION MODEL + CATEGORY RESTORATION [COMPLETED]
 [X] TASK-140 full category mapping for standalone
 [X] TASK-141 unify categories API + standalone
 [X] TASK-142 enforce API-first prediction
+
+--------------------------------------------------
+PHASE 29 — FIX RELATIVE IMPORTS FOR FASTAPI CONTAINER [COMPLETED]
+--------------------------------------------------
+
+[X] TASK-143 replace absolute api imports with relative
+[X] TASK-144 convert internal api imports to relative
+[X] TASK-145 ensure src/api/__init__.py exists
+[X] TASK-146 remove sys.path hacks from Phase 27
+[X] TASK-147 verify uvicorn src.api.app:app compatibility

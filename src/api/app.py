@@ -12,11 +12,10 @@ import re
 import joblib
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.append(str(ROOT))
-SRC_DIR = str(ROOT / "src")
+# Provide a root evaluation strictly locally mapped for internal ML inferences
+SRC_DIR = str(Path(__file__).resolve().parents[1])
 
-MODEL_PATH = ROOT / "models" / "latest.joblib"
+MODEL_PATH = Path(SRC_DIR).parent / "models" / "latest.joblib"
 model = None
 
 def get_model():
@@ -25,11 +24,11 @@ def get_model():
         model = joblib.load(MODEL_PATH)
     return model
 
-from api.schemas import ProjectInput
-from prediction.predictor import predict_success_probability
-from prediction.goal_optimizer import optimize_goal
-from analytics.analytics_engine import build_analytics_features
-from analytics.similarity import calculate_similarity_metrics
+from .schemas import ProjectInput
+from ..prediction.predictor import predict_success_probability
+from ..prediction.goal_optimizer import optimize_goal
+from ..analytics.analytics_engine import build_analytics_features
+from ..analytics.similarity import calculate_similarity_metrics
 
 logger = logging.getLogger(__name__)
 
